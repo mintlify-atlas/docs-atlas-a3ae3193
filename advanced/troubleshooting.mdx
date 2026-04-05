@@ -1,0 +1,159 @@
+---
+title: "Troubleshooting"
+description: "Solutions for common BlueRetro issues, from pairing failures to flashing problems."
+---
+
+## Common issues
+
+<AccordionGroup>
+  <Accordion title="Controller not pairing">
+    **Symptoms:** Bluetooth controller is not discovered or repeatedly fails to connect.
+
+    **Steps to resolve:**
+
+    1. **Ensure inquiry mode is active.** BlueRetro must be in inquiry (discovery) mode before it can pair with a new controller. Toggle inquiry mode using the button combo mapped to `BR_COMBO_BT_INQUIRY`, or via the web interface. The status LED will pulse to indicate discovery mode is active.
+
+    2. **Put the controller in pairing mode.** Each controller has a different procedure — for example, PS4/PS5 controllers require holding **Share + PS** until the light bar flashes. Consult your controller's manual.
+
+    3. **Factory reset if pairing is stuck.** Stored link keys can sometimes prevent re-pairing. Perform a factory reset (see the [Factory reset](#factory-reset) section) to clear all bonded devices and try again.
+
+    4. **Check for interference.** 2.4 GHz Wi-Fi and other Bluetooth devices in the same space can cause pairing failures. Try pairing in a different location or temporarily disabling nearby wireless devices.
+
+    **Inquiry mode toggle command:** `SYS_MGR_CMD_INQ_TOOGLE`
+  </Accordion>
+
+  <Accordion title="No input detected on the console">
+    **Symptoms:** Controller connects successfully but the console does not respond to button presses.
+
+    **Steps to resolve:**
+
+    1. **Verify wiring.** Double-check that all wires between the ESP32 and the console controller port are correctly seated. A single swapped or missing wire is enough to prevent communication.
+
+    2. **Check the system configuration.** The firmware must be built for (or configured to match) the console you are connecting to. Verify that `BR_SYS` was set to the correct system target when building. Flashing a `genesis` build to a device wired for an N64 will not work.
+
+    3. **Confirm console power.** Some wired protocols only become active after the console is powered on. Ensure the console is running before checking for input.
+
+    4. **Reset the wired interface.** Issue a wired interface reset (`SYS_MGR_CMD_WIRED_RST`) via the web interface to reinitialize the wired driver without rebooting.
+
+    5. **Check the multitap setting.** If `multitap_cfg` is set to a multitap mode but no multitap hardware is present, input routing may fail. Set `multitap_cfg` to `MT_NONE` for a standard single/dual port setup.
+  </Accordion>
+
+  <Accordion title="Wrong buttons or unexpected button behavior">
+    **Symptoms:** Buttons produce the wrong action on the console, or certain inputs are missing.
+
+    **Steps to resolve:**
+
+    1. **Check the device mode (`dev_mode`).** The `out_cfg.dev_mode` setting controls how the Bluetooth controller is presented to the console (`DEV_PAD`, `DEV_PAD_ALT`, `DEV_KB`, `DEV_MOUSE`). An incorrect device mode will cause buttons to be mapped incorrectly.
+
+    2. **Review button mappings.** Open the web configuration interface and inspect the mapping table for the relevant input port. Custom mappings override defaults and can cause unexpected behavior if misconfigured.
+
+    3. **Controller quirks.** Some controllers require specific quirk flags (e.g. `BT_QUIRK_FACE_BTNS_INVERT`, `BT_QUIRK_8BITDO_M30`). BlueRetro auto-detects controllers by VID/PID, but third-party or clone controllers may not be recognized. Check the BlueRetro wiki for known quirk flags for your controller.
+
+    4. **Reset to defaults.** If mappings have become corrupted, perform a factory reset to restore the default configuration.
+  </Accordion>
+
+  <Accordion title="Input lag or delayed response">
+    **Symptoms:** Noticeable delay between pressing a button and seeing the action on screen.
+
+    **Background:** BlueRetro supports both **Bluetooth Classic (BR/EDR)** and **Bluetooth Low Energy (BLE)** controllers. These have fundamentally different latency characteristics:
+
+    - **BR/EDR** (PS3, PS4, PS5, Xbox, Switch Pro): Generally lower latency in the 4–8 ms range per Bluetooth poll interval.
+    - **BLE**: Higher and more variable latency depending on the connection interval negotiated with the controller.
+
+    **Steps to resolve:**
+
+    1. **Prefer BR/EDR controllers** for latency-sensitive games (fighting games, rhythm games, platformers).
+
+    2. **Minimize radio interference.** Other 2.4 GHz devices increase retransmissions and raise effective latency. Use 5 GHz Wi-Fi where possible.
+
+    3. **Use a wired controller passthrough** if available for your console — BlueRetro cannot improve the latency floor imposed by the Bluetooth radio.
+
+    4. **Check the BlueRetro latency test documentation** maintained by the community for measured numbers per controller type.
+  </Accordion>
+
+  <Accordion title="Memory card not saving or not recognized">
+    **Symptoms:** Console does not detect a memory card, or saves are lost after power cycling.
+
+    **Steps to resolve:**
+
+    1. **Enable memory card mode.** Set `acc_mode` to `ACC_MEM` (1) or `ACC_BOTH` (3) in the web configuration for the port you want the virtual memory card on. `ACC_NONE` (0) disables the memory card entirely.
+
+    2. **Check the bank select value.** `global_cfg.banksel` must be a value from `0` to `3` (less than `CONFIG_BANKSEL_MAX = 4`). Any other value disables memory card persistence. The default value is `0`.
+
+    3. **Wait before powering off.** BlueRetro uses a deferred write — save data is committed to `/fs/mc.bin` up to 1 second after the console writes to the card. Powering off immediately after a save can cause data loss. Wait a few seconds after the console confirms the save.
+
+    4. **Verify filesystem health.** If the SPIFFS filesystem is corrupted, `mc_init()` will fail. A factory reset clears the filesystem and allows BlueRetro to create a fresh `mc.bin`.
+
+    5. **Confirm system support.** Virtual memory card emulation is currently supported for PlayStation (PSX/PS2) and Dreamcast (VMU). Other systems do not support this feature.
+
+    See [Virtual memory card](/advanced/memory-card) for full details.
+  </Accordion>
+
+  <Accordion title="Firmware not flashing">
+    **Symptoms:** `esptool` fails to connect, times out, or reports errors during flashing.
+
+    **Steps to resolve:**
+
+    1. **Enter download mode manually.** Hold the **BOOT** (IO0) button, press and release **EN** (reset), then release BOOT. Run the flash command immediately after.
+
+    2. **Lower the baud rate.** Try `-b 115200` instead of the default `-b 460800` if you see CRC errors or repeated connection failures.
+
+    3. **Verify the device has 4 MB flash.** BlueRetro's partition table requires 4 MB. Attempting to flash a 2 MB device will fail or produce a non-functional device.
+
+    4. **Try a different USB cable or port.** Long or poor-quality cables cause signal integrity issues at high baud rates.
+
+    5. **Install or update esptool.** Run `pip install --upgrade esptool` to ensure you have a compatible version.
+
+    See [Flashing firmware](/advanced/flashing) for the full flashing guide.
+  </Accordion>
+
+  <Accordion title="Factory reset">
+    A factory reset clears all stored link keys, Bluetooth device bonds, and user configuration, restoring BlueRetro to its default state.
+
+    **Method 1 — Button combo:**
+    Hold the button combination mapped to `BR_COMBO_FACTORY_RESET` on a connected controller. The exact combo depends on your controller type; consult the BlueRetro wiki for your controller's combo table.
+
+    **Method 2 — System manager command:**
+    The `SYS_MGR_CMD_FACTORY_RST` command can be issued via the web interface to trigger a factory reset programmatically.
+
+    After a factory reset, BlueRetro will restart automatically (`SYS_MGR_CMD_RST`).
+
+    <Warning>
+    Factory reset is irreversible. All paired controllers must be re-paired and all custom button mappings must be reconfigured.
+    </Warning>
+  </Accordion>
+</AccordionGroup>
+
+## System manager commands
+
+The system manager (`main/system/manager.h`) exposes the following commands. These can be triggered via button combos or the web interface:
+
+| Command | Value | Description |
+|---------|-------|-------------|
+| `SYS_MGR_CMD_RST` | 0 | Restart the ESP32 |
+| `SYS_MGR_CMD_PWR_ON` | 1 | Assert the console power-on signal |
+| `SYS_MGR_CMD_PWR_OFF` | 2 | Assert the console power-off signal |
+| `SYS_MGR_CMD_INQ_TOOGLE` | 3 | Toggle Bluetooth inquiry (discovery) mode |
+| `SYS_MGR_CMD_FACTORY_RST` | 4 | Factory reset (clear all data and restart) |
+| `SYS_MGR_CMD_DEEP_SLEEP` | 5 | Enter deep sleep (low-power standby) |
+| `SYS_MGR_CMD_ADAPTER_RST` | 6 | Reset the adapter subsystem only |
+| `SYS_MGR_CMD_WIRED_RST` | 7 | Reset the wired interface driver |
+
+## Diagnostic output
+
+BlueRetro logs diagnostic information over UART at **921600 baud**. Connect a USB-UART adapter to the ESP32's TX/RX pins and use a terminal program (e.g. `idf.py monitor`, `minicom`, or PuTTY) to view logs. Key log prefixes to look for:
+
+- `# gid_update:` — game ID detected
+- `# mc_restore:` — memory card restore result
+- `# mc_store:` — memory card write result
+
+## Getting help
+
+If the above steps do not resolve your issue:
+
+- **Community support:** Post in [GitHub Discussions](https://github.com/darthcloud/BlueRetro/discussions) where the community and past maintainers can help.
+- **Bug reports:** Open an issue on [GitHub Issues](https://github.com/darthcloud/BlueRetro/issues) with your firmware version, hardware revision, console, controller model, and a description of the problem.
+
+<Note>
+BlueRetro has been archived and is no longer under active development. Bug fixes and new features are not planned from the original maintainer, but the community is active in GitHub Discussions.
+</Note>

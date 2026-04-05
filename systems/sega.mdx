@@ -1,0 +1,87 @@
+---
+title: "Sega systems"
+description: "BlueRetro support for Genesis/Mega Drive, Saturn, and Dreamcast."
+keywords: ["Sega", "Genesis", "Mega Drive", "Saturn", "Dreamcast", "BlueRetro"]
+---
+
+BlueRetro supports three Sega console families. Genesis and Saturn use the SEGA IO parallel bus. Dreamcast uses the Maple bus serial protocol.
+
+---
+
+## Genesis / Mega Drive
+
+| Property | Value |
+|---|---|
+| System ID | `GENESIS` (5) |
+| Protocol | SEGA IO (parallel, TH-clocked) |
+| Driver | `genesis.c` / `genesis_from_generic` |
+| Max players | 2 (up to 8 with multitap) |
+| Multitap modes | `MT_SLOT_1`, `MT_SLOT_2`, `MT_DUAL`, `MT_ALT` |
+| Accessory support | `ACC_NONE` |
+
+The Genesis adapter supports both 3-button and 6-button controller layouts. In the default `DEV_PAD` mode, the adapter presents the standard 3-button layout (D-pad, A, B, C, Start). In `DEV_PAD_ALT` mode, the 6-button layout is used (D-pad, A, B, C, X, Y, Z, Mode, Start).
+
+The driver also supports `DEV_MOUSE` mode, emulating the Sega Mouse using the standard SEGA mouse byte format.
+
+<Tabs>
+  <Tab title="Multitap (MT_SLOT_1 / MT_SLOT_2)">
+    Enables the Team Player multitap adapter in port 1 or port 2 respectively, using the Time-Wheel (TWH) protocol. Supports up to 4 additional controllers per port.
+  </Tab>
+  <Tab title="Multitap (MT_DUAL)">
+    Enables Team Player multitap on both ports simultaneously, supporting up to 8 players total.
+  </Tab>
+  <Tab title="Multitap (MT_ALT)">
+    Uses the EA 4-Way Play adapter protocol. Supports 4 controllers connected to port 1, with ports 2–4 mapped to wired adapter indices 1–3.
+  </Tab>
+</Tabs>
+
+<Note>
+The 3-button / 6-button mode can be toggled at runtime using the mapped `PAD_MT` button without restarting the adapter.
+</Note>
+
+---
+
+## Saturn
+
+| Property | Value |
+|---|---|
+| System ID | `SATURN` (12) |
+| Protocol | SEGA IO (Saturn variant) |
+| Driver | `saturn.c` / `saturn_from_generic` |
+| Max players | 2 (up to 8 with multitap) |
+| Multitap modes | `MT_SLOT_1`, `MT_SLOT_2`, `MT_DUAL` |
+| Accessory support | `ACC_MEM` |
+
+The Saturn adapter presents the standard 8-button digital pad (D-pad, A, B, C, X, Y, Z, L, R, Start). In `DEV_PAD_ALT` mode (3D Control Pad), analog stick axes and analog trigger values are added to the output.
+
+In `DEV_KB` mode, the adapter emulates the Saturn Keyboard using the Saturn-specific scancode table (source: plutiedev.com/saturn-keyboard). In `DEV_MOUSE` mode, the adapter emulates the Sega Saturn Mouse.
+
+Memory card emulation (`ACC_MEM`) is supported to save game data without a physical Saturn Memory Cartridge.
+
+<Tip>
+The 3D pad analog mode can be toggled at runtime using the mapped `PAD_MT` button.
+</Tip>
+
+---
+
+## Dreamcast
+
+| Property | Value |
+|---|---|
+| System ID | `DC` (16) |
+| Protocol | Maple bus (serial, half-duplex) |
+| Driver | `dc.c` / `dc_from_generic` |
+| Max players | 4 |
+| Accessory support | `ACC_MEM`, `ACC_RUMBLE`, `ACC_BOTH` |
+
+The Dreamcast adapter presents the full DC controller layout: D-pad, A, B, X, Y, Z, C, D, Start, analog L/R triggers, and two analog sticks (6 axes total). Rumble (`ACC_RUMBLE`) is supported via the Dreamcast Vibration Pack protocol. VMU memory card emulation (`ACC_MEM`) is also supported.
+
+The driver supports `DEV_KB` mode using the Dreamcast Keyboard (HID-based) scancode table, and `DEV_MOUSE` mode using the Dreamcast Mouse with 4-axis relative movement.
+
+<Accordion title="Vibration pack feedback">
+The Dreamcast vibration pack protocol sends power level, frequency, convergence, and duration parameters. BlueRetro translates these to a generic rumble feedback signal routed to the connected Bluetooth controller.
+</Accordion>
+
+<Note>
+The Dreamcast controller also exposes a secondary D-pad (right D-pad buttons `DC_RD_*`) which maps to the right digital directional inputs.
+</Note>

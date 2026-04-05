@@ -1,0 +1,165 @@
+---
+title: Hardware
+description: ESP32 board requirements, HW1 vs HW2 form factors, per-system wiring configurations, and community-built PCBs for BlueRetro.
+---
+
+## Overview
+
+BlueRetro runs on the standard ESP32 (dual-core Xtensa LX6 with integrated Bluetooth Classic and BLE). It does **not** support ESP32-S2, ESP32-S3, or ESP32-C3 variants, which lack Bluetooth Classic (BR/EDR) support.
+
+The firmware is built and tested against the ESP32 with a minimum revision of Rev 1. The `sdkconfig` targets a 4 MB flash, 240 MHz CPU, and dual-mode Bluetooth (BR/EDR + BLE) with up to 7 simultaneous connections.
+
+## HW1 vs HW2
+
+BlueRetro hardware comes in two form factors:
+
+<Tabs>
+  <Tab title="HW1 — External adapter">
+    HW1 is an **external** adapter design intended for breadboards, perfboards, or off-the-shelf ESP32 development boards such as the **ESP32-DevKitC**. It connects to the console's controller port via wires or a purpose-built cable, and the ESP32 module sits outside the console.
+
+    **Best for:**
+    - Quick prototyping and testing
+    - Users who want a non-invasive, reversible installation
+    - N64, SNES, Genesis, and other systems with accessible external controller ports
+
+    **Typical components:**
+    - ESP32-DevKitC (38-pin or 30-pin)
+    - Breadboard or custom PCB
+    - Console-specific controller port connector or cable
+  </Tab>
+  <Tab title="HW2 — Internal PCB">
+    HW2 is an **internal** design where a compact PCB is installed inside the console. It replaces the original controller port PCB or mounts directly to the console's mainboard. This gives a clean, permanent installation with no external cables.
+
+    **Best for:**
+    - Permanent installations
+    - Users comfortable with soldering
+    - Consoles where the controller port circuitry is easily accessed (GameCube, N64, PlayStation)
+
+    **Typical components:**
+    - Custom HW2 PCB (community-designed, per-system)
+    - Soldering to console controller port pads
+  </Tab>
+</Tabs>
+
+### Comparison
+
+| Feature | HW1 (External) | HW2 (Internal) |
+|---|---|---|
+| Form factor | External, uses DevKitC | Internal PCB |
+| Installation difficulty | Easy — no soldering required | Moderate — requires soldering |
+| Reversibility | Fully reversible | Semi-permanent |
+| Appearance | External dongle | Clean internal install |
+| Power source | USB or console port | Console internal power |
+| Recommended for | Prototyping, multi-system | Single-system permanent build |
+
+## Per-system wiring configurations
+
+The `configs/` directory in the repository contains per-system wiring and build configurations for both HW1 and HW2. Each subdirectory corresponds to a supported target system:
+
+| Config directory | Target system |
+|---|---|
+| `3do` | 3DO Interactive Multiplayer |
+| `cdi` | Philips CD-i |
+| `dreamcast` | Sega Dreamcast |
+| `gamecube` | Nintendo GameCube |
+| `gbahd` | Game Boy Advance HD |
+| `genesis` | Sega Mega Drive / Genesis |
+| `jaguar` | Atari Jaguar |
+| `jvs_arcade` | JVS Arcade |
+| `n64` | Nintendo 64 |
+| `nes` | Nintendo Entertainment System |
+| `parallel_1p` | Parallel 1P (NeoGeo, Supergun, JAMMA, etc.) |
+| `parallel_1p_3v3` | Parallel 1P — 3.3 V variant |
+| `parallel_2p` | Parallel 2P (Atari 2600/7800, Master System, etc.) |
+| `parallel_2p_3v3` | Parallel 2P — 3.3 V variant |
+| `pc_engine` | PC Engine / TurboGrafx-16 |
+| `pcfx` | NEC PC-FX |
+| `playstation` | PlayStation 1 / PlayStation 2 |
+| `saturn` | Sega Saturn |
+| `snes` | Super Nintendo Entertainment System |
+| `universal` | Universal / multi-system |
+| `virtualboy` | Nintendo Virtual Boy |
+| `wii_extension` | Wii Extension port |
+
+Each config directory contains system-specific `sdkconfig` fragments and GPIO mapping files used at build time. Refer to the [GitHub wiki](https://github.com/darthcloud/BlueRetro/wiki) for pinout diagrams for each system.
+
+<Info>
+  The `universal` config is a good starting point if you want to test BlueRetro with multiple systems before committing to a system-specific build.
+</Info>
+
+## ESP32 board recommendations
+
+Any standard ESP32 module with at least 4 MB flash should work. The boards most commonly used in the community are:
+
+- **ESP32-DevKitC v4** (38-pin) — recommended for HW1 builds
+- **ESP32-DevKitC v4** (30-pin) — also compatible with HW1
+- **ESP32-WROOM-32** module — base module used in most community HW2 PCBs
+
+<Warning>
+  Do not use ESP32-S2, ESP32-S3, or ESP32-C3 boards. These variants do not support Bluetooth Classic (BR/EDR), which is required for PS3, Wii, and many other controllers.
+</Warning>
+
+## Community PCBs and 3D prints
+
+The BlueRetro community has produced a number of ready-to-use PCBs and 3D-printed enclosures. Several of these are available for purchase from the makers listed below.
+
+<AccordionGroup>
+  <Accordion title="BlueRetro PS1/2 Receiver">
+    A 3D-printed case and PCB for building a DIY PS1/PS2 Bluetooth dongle.
+
+    **Author:** mi213 · **Repository:** [Micha213/BlueRetro-PS1-2-Receiver](https://github.com/Micha213/BlueRetro-PS1-2-Receiver)
+  </Accordion>
+  <Accordion title="N64 BlueRetro Mount">
+    A 3D-printed mount for an ESP32-DevKitC designed to fit inside the Nintendo 64 controller port area.
+
+    **Author:** reventlow64 · **Repository:** [PrusaPrinters #90275](https://www.prusaprinters.org/prints/90275-nintendo-64-blueretro-bluetooth-receiver-mount)
+  </Accordion>
+  <Accordion title="BlueRetro AIO (All-in-One) Units">
+    Through-hole base and cable PCBs for a self-contained BlueRetro build.
+
+    **Author:** pmgducati · **Repository:** [pmgducati/Blue-Retro-AIO-Units](https://github.com/pmgducati/Blue-Retro-AIO-Units)
+  </Accordion>
+  <Accordion title="BR4N64 — Internal Flex-PCB for Nintendo 64">
+    A flexible PCB that installs internally inside the Nintendo 64.
+
+    **Author:** TharathielCB · **Repository:** [TharathielCB/BR4N64](https://github.com/TharathielCB/BR4N64)
+  </Accordion>
+  <Accordion title="BlueMemCard — PSX Memory Card with BlueRetro">
+    A replacement PCB for the PlayStation memory card slot that integrates PicoMemcard and BlueRetro support.
+
+    **Author:** ChrispyNugget · **Repository:** [ChrispyNugget/BlueMemCard](https://github.com/ChrispyNugget/BlueMemCard)
+  </Accordion>
+  <Accordion title="BlueRetro HW2 QSB for GameCube">
+    An internal BlueRetro PCB with CurrentTrigger support for the Nintendo GameCube.
+
+    **Author:** Arthrimus · **Repository:** [Arthrimus/BlueRetro-HW2-GameCube](https://github.com/Arthrimus/BlueRetro-HW2-GameCube)
+  </Accordion>
+  <Accordion title="BlueRetro HW2 internal installation guides">
+    Step-by-step guides for installing HW2 builds inside various consoles.
+
+    **Author:** Nostalgic Indulgences · **Repository:** [nostalgic-indulgences/BlueRetro_Internal_Installation](https://github.com/nostalgic-indulgences/BlueRetro_Internal_Installation)
+  </Accordion>
+</AccordionGroup>
+
+## Makers
+
+The following makers sell assembled BlueRetro adapters and support continued firmware development:
+
+<CardGroup cols={2}>
+  <Card title="Laser Bear Industries" icon="store" href="https://www.laserbear.net">
+    Sells assembled BlueRetro adapters for a range of retro consoles.
+  </Card>
+  <Card title="Humble Bazooka" icon="store" href="https://www.humblebazooka.com">
+    Carries BlueRetro hardware and accessories.
+  </Card>
+  <Card title="RetroOnyx" icon="store" href="https://www.retroonyx.com/">
+    Offers BlueRetro-based products for retro gaming.
+  </Card>
+  <Card title="RetroTime (8BitMods)" icon="store" href="https://8bitmods.com/retrotime">
+    Stocks BlueRetro adapters alongside other retro mods.
+  </Card>
+</CardGroup>
+
+<Note>
+  Purchasing from these makers helps support the BlueRetro project and funds ongoing firmware development.
+</Note>

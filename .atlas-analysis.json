@@ -1,0 +1,87 @@
+{
+  "projectType": "general",
+  "projectName": "BlueRetro",
+  "projectDescription": "Open-source ESP32 firmware that bridges modern Bluetooth controllers (PS3/4/5, Xbox, Switch, Wii, and generic HID) to retro game consoles and computers including NES, SNES, N64, GameCube, PlayStation, Saturn, Dreamcast, and many more.",
+  "theme": "aspen",
+  "primaryColor": "#04e1f9",
+  "lightColor": "#0f2225",
+  "darkColor": "#d1d0d1",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "hardware"
+            ]
+          },
+          {
+            "group": "Supported Systems",
+            "pages": [
+              "systems/overview",
+              "systems/nintendo",
+              "systems/sega",
+              "systems/playstation",
+              "systems/other-consoles"
+            ]
+          },
+          {
+            "group": "Bluetooth Controllers",
+            "pages": [
+              "controllers/overview",
+              "controllers/pairing",
+              "controllers/supported-devices"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/web-config",
+              "configuration/button-mapping",
+              "configuration/axis-calibration",
+              "configuration/multitap",
+              "configuration/macros"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/building-firmware",
+              "advanced/flashing",
+              "advanced/memory-card",
+              "advanced/game-id",
+              "advanced/troubleshooting"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Multiplayer support with up to 4+ simultaneous Bluetooth controllers via a single adapter",
+    "Support for 20+ retro consoles: NES, SNES, N64, GameCube, PlayStation 1/2, Saturn, Dreamcast, 3DO, Jaguar, PC-Engine/TG16, and more",
+    "Compatible with PS3, PS4, PS5, Xbox One, Xbox Series X|S, Nintendo Switch, Wii, and generic HID Bluetooth (BR/EDR & LE) devices",
+    "Fully configurable button mapping, axis calibration, and dead zone settings via web interface",
+    "Multitap support for consoles with multi-port adapters",
+    "Macro button combos for system commands (reset, power off, factory reset, Bluetooth inquiry)",
+    "Game ID detection for automatic per-game configuration profiles",
+    "Virtual memory card emulation for PlayStation and other consoles",
+    "Open source hardware and firmware under CERN-OHL-P-2.0 and Apache-2.0 licenses",
+    "Built on ESP32 with ESP-IDF framework"
+  ],
+  "publicApiSurface": [
+    "adapter_bridge() — translates Bluetooth HID input to wired console output",
+    "adapter_bridge_fb() — forwards console feedback (rumble, LEDs) to Bluetooth device",
+    "config_init() / config_update() — load and persist adapter configuration",
+    "bt_host_init() — initialize the custom Bluetooth host stack",
+    "sys_mgr_cmd() — issue system management commands (reset, power, factory reset)",
+    "mc_read() / mc_write() — virtual memory card read/write interface",
+    "gid_update() — update game ID from console feedback data",
+    "Wired system IDs: PARALLEL_1P, PARALLEL_2P, NES, PCE, GENESIS, SNES, CDI, REAL_3DO, JAGUAR, PSX, SATURN, PCFX, JVS, N64, DC, PS2, GC, WII_EXT, VBOY",
+    "Bluetooth device types: BT_HID_GENERIC, BT_PS3, BT_WII, BT_PS, BT_SW, BT_SW2"
+  ]
+}

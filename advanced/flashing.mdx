@@ -1,0 +1,136 @@
+---
+title: "Flashing firmware"
+description: "Write BlueRetro firmware to your ESP32 over USB using the flash script or esptool directly."
+---
+
+## Requirements
+
+- ESP32 with **4 MB flash** — this is a hard requirement imposed by the partition layout
+- USB cable connected to the ESP32's UART port
+- Python 3 with `esptool` installed (`pip install esptool`)
+- Pre-built firmware artifacts (from a release download or a local build)
+
+<Warning>
+BlueRetro **requires a 4 MB flash chip**. Devices with 2 MB flash will not work — the partition table does not fit and OTA slots will be missing.
+</Warning>
+
+## Partition layout
+
+BlueRetro uses a custom partition table (`partitions.csv`) that enables OTA updates:
+
+| Name | Type | Offset | Size | Description |
+|------|------|--------|------|-------------|
+| `nvs` | data/nvs | `0x9000` | 16 KB | Non-volatile storage |
+| `otadata` | data/ota | `0xd000` | 8 KB | OTA slot selector |
+| `phy_init` | data/phy | `0xf000` | 4 KB | RF calibration data |
+| `factory` | app/factory | `0x10000` | 1 MB | Primary application |
+| `ota_0` | app/ota_0 | `0x110000` | 1 MB | OTA update slot 0 |
+| `ota_1` | app/ota_1 | `0x210000` | 1 MB | OTA update slot 1 |
+| `storage` | data/spiffs | — | ~960 KB | Filesystem (configs, memory card) |
+
+## Method 1: flash_blueretro.py (recommended)
+
+The `tools/flash_blueretro.py` helper script wraps `esptool` with the correct parameters and automatically locates the bootloader and partition table relative to the firmware binary.
+
+### Usage
+
+```bash
+python flash_blueretro.py <firmware.bin>
+```
+
+The firmware binary and its sibling directories (`bootloader/`, `partition_table/`, `ota/`) must be in the same parent directory, as produced by the build system or a release archive.
+
+### What it does
+
+The script invokes `esptool` with the following fixed parameters:
+
+```python
+'--chip', 'esp32',
+'-b', '460800',
+'--before', 'default_reset',
+'--after', 'hard_reset',
+'write_flash',
+'--flash_mode', 'dio',
+'--flash_size', '4MB',
+'--flash_freq', '40m',
+'0x1000',  '<dir>/bootloader/bootloader.bin',
+'0x8000',  '<dir>/partition_table/partition-table.bin',
+'0xd000',  '<dir>/ota/ota_data_initial.bin',
+'0x10000', '<firmware.bin>',
+```
+
+All four regions are written in a single `write_flash` command.
+
+## Method 2: esptool directly
+
+If you prefer to invoke `esptool` manually, use the equivalent command below. Replace the paths with the actual locations of your build artifacts:
+
+```bash
+python -m esptool \
+  --chip esp32 \
+  -b 460800 \
+  --before default_reset \
+  --after hard_reset \
+  write_flash \
+  --flash_mode dio \
+  --flash_size 4MB \
+  --flash_freq 40m \
+  0x1000  bootloader/bootloader.bin \
+  0x8000  partition_table/partition-table.bin \
+  0xd000  ota/ota_data_initial.bin \
+  0x10000 BlueRetro_hw2_genesis.bin
+```
+
+<Tip>
+If `esptool` cannot find the serial port automatically, add `--port /dev/ttyUSB0` (Linux/macOS) or `--port COM3` (Windows) after `--chip esp32`.
+</Tip>
+
+## Flash address reference
+
+| Address | Content |
+|---------|---------|
+| `0x1000` | Bootloader (`bootloader/bootloader.bin`) |
+| `0x8000` | Partition table (`partition_table/partition-table.bin`) |
+| `0xd000` | OTA data initial (`ota/ota_data_initial.bin`) |
+| `0x10000` | Application firmware (`.bin`) |
+
+## OTA (Over-The-Air) updates
+
+BlueRetro supports OTA firmware updates. The partition table reserves two 1 MB OTA slots (`ota_0` at `0x110000` and `ota_1` at `0x210000`) alongside the factory partition. When an OTA update is applied, the device boots from the newly written OTA slot and the `otadata` partition tracks which slot is active.
+
+<Info>
+OTA updates are delivered through the BlueRetro web interface. A full USB reflash (writing all four regions) resets the OTA state back to the factory partition via the `ota_data_initial.bin` file written to `0xd000`.
+</Info>
+
+## Troubleshooting flash issues
+
+<AccordionGroup>
+  <Accordion title="Device not detected / connection refused">
+    The ESP32 must be in download mode before esptool can communicate with it.
+
+    1. Hold the **BOOT** (IO0) button on your ESP32 module.
+    2. While holding BOOT, press and release the **EN** (reset) button.
+    3. Release the BOOT button.
+    4. Run the flash command — the chip is now in download mode.
+
+    The `--before default_reset` flag in the script attempts to trigger download mode automatically via the DTR/RTS lines, but some USB-UART adapters do not support this.
+  </Accordion>
+
+  <Accordion title="Flash fails or times out at high baud rate">
+    The default baud rate is 460800. If you see CRC errors or timeouts, try lowering it:
+
+    ```bash
+    python -m esptool --chip esp32 -b 115200 write_flash …
+    ```
+
+    Long or low-quality USB cables and cheap USB-UART adapters are common culprits.
+  </Accordion>
+
+  <Accordion title="Wrong flash size error">
+    If esptool reports a flash size mismatch, verify your ESP32 module actually has 4 MB of flash. Modules labeled "ESP32-WROOM-32" commonly come in both 4 MB and 2 MB variants. BlueRetro only supports 4 MB devices.
+  </Accordion>
+
+  <Accordion title="Firmware boots but behaves unexpectedly after update">
+    A partial or interrupted flash can leave the device in an inconsistent state. Perform a full reflash of all four regions (bootloader, partition table, OTA data, and firmware) to restore a known-good state.
+  </Accordion>
+</AccordionGroup>

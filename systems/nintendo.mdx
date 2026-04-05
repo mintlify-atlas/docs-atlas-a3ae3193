@@ -1,0 +1,127 @@
+---
+title: "Nintendo systems"
+description: "BlueRetro support for NES, SNES, N64, GameCube, Virtual Boy, and Wii extension connectors."
+keywords: ["NES", "SNES", "N64", "GameCube", "Virtual Boy", "Wii", "BlueRetro", "Nintendo"]
+---
+
+BlueRetro supports six Nintendo console families. NES and SNES share the NPISO protocol driver (`npiso.c`). N64 and GameCube share the NSI protocol driver (`n64.c` / `gc.c`). The Wii extension connector uses I2C (`wii.c`). Virtual Boy uses the NPISO driver with a dedicated button mapping.
+
+---
+
+## NES
+
+| Property | Value |
+|---|---|
+| System ID | `NES` (3) |
+| Protocol | NPISO (serial, clocked by the console) |
+| Driver | `npiso.c` / `npiso_from_generic` |
+| Max players | 2 |
+| Accessory support | `ACC_NONE` |
+
+The NES adapter presents a standard 8-button gamepad (D-pad, A, B, Start, Select). The NPISO driver also supports mouse mode (`DEV_MOUSE`), mapping to the NES Arkanoid trackball protocol, and keyboard mode (`DEV_KB`), mapping to the Family BASIC keyboard matrix.
+
+<Note>
+The NES Zapper is not emulated. Mouse mode maps to the Arkanoid controller (trackball) rather than the Zapper light gun.
+</Note>
+
+---
+
+## SNES
+
+| Property | Value |
+|---|---|
+| System ID | `SNES` (6) |
+| Protocol | NPISO with SPI-compatible framing |
+| Driver | `npiso.c` / `npiso_from_generic` |
+| Max players | 2 (4 or 8 with multitap) |
+| Multitap modes | `MT_SLOT_1`, `MT_SLOT_2`, `MT_DUAL` |
+| Accessory support | `ACC_NONE` |
+
+The SNES adapter presents a 12-button gamepad (D-pad, A, B, X, Y, L, R, Start, Select). In `DEV_MOUSE` mode, the driver emulates the SNES Mouse using the standard mouse byte format. In `DEV_KB` mode, it maps to the Super Famicom Keyboard (Family BASIC successor) matrix.
+
+<Tip>
+Use `MT_DUAL` to enable multitap adapters on both ports simultaneously, supporting up to 8 players.
+</Tip>
+
+---
+
+## Nintendo 64
+
+| Property | Value |
+|---|---|
+| System ID | `N64` (15) |
+| Protocol | NSI (Nintendo Serial Interface) |
+| Driver | `n64.c` / `n64_from_generic` |
+| Max players | 4 |
+| Accessory support | `ACC_MEM`, `ACC_RUMBLE`, `ACC_BOTH` |
+
+The N64 adapter presents the full N64 controller layout: D-pad, C-buttons, A, B, Z, L, R, Start, and the analog joystick (2 axes). Rumble Pak (`ACC_RUMBLE`) and Controller Pak / Memory Pak (`ACC_MEM`) are both supported and can be toggled at runtime.
+
+The driver also supports `DEV_MOUSE` (N64 Mouse) and `DEV_KB` (64DD keyboard layout).
+
+<Accordion title="Rumble and Memory Pak runtime toggle">
+While in-game, you can toggle between Rumble Pak and Controller Pak without re-flashing. The toggle is triggered by the mapped `PAD_MT` button. A short vibration pulse confirms the switch:
+
+- Two short pulses — Controller Pak selected
+- One long pulse — Rumble Pak selected
+</Accordion>
+
+<Accordion title="Controller Pak bank selection">
+The N64 Controller Pak supports 4 banks selectable via the `PAD_MQ` mapped button. The current bank is stored in `global_cfg.banksel`.
+</Accordion>
+
+---
+
+## GameCube
+
+| Property | Value |
+|---|---|
+| System ID | `GC` (18) |
+| Protocol | NSI (Nintendo Serial Interface) |
+| Driver | `gc.c` / `gc_from_generic` |
+| Max players | 4 |
+| Accessory support | `ACC_RUMBLE` |
+
+The GameCube adapter presents the full GC controller layout: A, B, X, Y, Z, L, R, Start, D-pad, left analog stick, right analog stick (C-stick), and analog L/R triggers (6 axes total). Rumble is supported via the `gc_fb_to_generic` feedback path.
+
+The driver supports two face-button mapping modes — position-based and name-based — toggled at runtime using the mapped `PAD_MS` button.
+
+The driver also supports `DEV_KB` mode, mapping to the GameCube Keyboard (ASCII ASC-1901P0) scancode table.
+
+<Note>
+GameCube has no memory card emulation in BlueRetro; the console's memory card slot is separate from the controller port.
+</Note>
+
+---
+
+## Virtual Boy
+
+| Property | Value |
+|---|---|
+| System ID | `VBOY` (20) |
+| Protocol | NPISO (same physical protocol as NES/SNES) |
+| Driver | `npiso.c` / `npiso_from_generic` with VB button map |
+| Max players | 1 |
+| Accessory support | `ACC_NONE` |
+
+The Virtual Boy adapter uses the NPISO driver with a dedicated button mask (`npiso_vb_btns_mask`). The controller has two D-pads (left and right), A, B, L, R, Start, and Select. Both D-pads are exposed through the left and right D-pad mappings.
+
+---
+
+## Wii extension
+
+| Property | Value |
+|---|---|
+| System ID | `WII_EXT` (19) |
+| Protocol | I2C (Wii extension connector) |
+| Driver | `wii.c` / `wii_from_generic` |
+| Max players | 4 |
+| Accessory support | `ACC_NONE` |
+
+The WII_EXT system targets the Wii Classic Controller and Wii Classic Controller Pro extension connectors. BlueRetro presents itself as a Wii Classic Controller to the Wii console via I2C. The driver exposes the full Classic Controller layout: D-pad, A, B, X, Y, ZL, ZR, L, R, Plus, Minus, Home, and two analog sticks (4 axes) plus analog L/R triggers.
+
+In `DEV_PAD_ALT` mode, the analog trigger axes are exposed to the console. In the default `DEV_PAD` mode, the analog triggers are not included in the axis descriptor, matching the Classic Controller Pro behavior.
+
+<Info>
+Supported Wii extension subtypes include: Nunchuck, Classic Controller, Classic Controller Pro (8-bit and standard), and Wii U Pro Controller.
+</Info>

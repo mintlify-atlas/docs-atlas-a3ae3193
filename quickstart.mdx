@@ -1,80 +1,158 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick start
+description: Flash BlueRetro firmware onto an ESP32 board and connect your first Bluetooth controller in minutes.
 ---
 
-## Get started in three steps
+## Prerequisites
 
-Get your documentation site running locally and make your first customization.
+Before you begin, make sure you have:
 
-### Step 1: Set up your local environment
+- An ESP32 board (ESP32-DevKitC or equivalent — see [Hardware](/hardware) for compatible boards)
+- A USB cable to connect the ESP32 to your computer
+- A supported Bluetooth controller (PS4, PS5, Xbox One/Series, Switch Pro Controller, Wii Remote, or any generic HID Bluetooth device)
+- Python 3 installed on your computer
+- The `esptool` Python package: `pip install esptool`
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+<Info>
+  BlueRetro requires a standard ESP32 (not ESP32-S2, S3, or C3). The firmware targets the dual-core Xtensa LX6 with integrated Bluetooth Classic (BR/EDR) and BLE support.
+</Info>
 
-### Step 2: Deploy your changes
+## Steps
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+<Steps>
+  <Step title="Get your hardware">
+    You need an ESP32 board wired to your target console's controller port. BlueRetro supports two hardware configurations:
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    - **HW1** — External adapter using a breadboard or ESP32-DevKitC. Good for getting started quickly.
+    - **HW2** — Internal PCB installed inside the console. Cleaner result, requires soldering.
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+    See the [Hardware](/hardware) page for board compatibility, wiring pinouts, and community PCBs.
+  </Step>
 
-### Step 3: Go live
+  <Step title="Download the firmware">
+    Download the latest BlueRetro firmware release from the GitHub releases page. Each release contains a directory with the following files:
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    ```text
+    BlueRetro_<version>/
+    ├── BlueRetro_<system>.bin          # Main firmware image
+    ├── bootloader/
+    │   └── bootloader.bin
+    ├── partition_table/
+    │   └── partition-table.bin
+    └── ota/
+        └── ota_data_initial.bin
+    ```
 
-## Next steps
+    Choose the firmware binary that matches your target console system (for example, `BlueRetro_HW1_N64.bin` for an HW1 N64 build).
+  </Step>
 
-Now that you have your docs running, explore these key features:
+  <Step title="Flash the firmware">
+    Connect the ESP32 to your computer via USB. Use the `flash_blueretro.py` helper script included in the `tools/` directory of the repository, or invoke `esptool` directly.
+
+    **Using the helper script:**
+
+    ```bash
+    python tools/flash_blueretro.py path/to/BlueRetro_<system>.bin
+    ```
+
+    The script automatically flashes all four required images at the correct addresses:
+
+    | Address | Image |
+    |---|---|
+    | `0x1000` | `bootloader/bootloader.bin` |
+    | `0x8000` | `partition_table/partition-table.bin` |
+    | `0xd000` | `ota/ota_data_initial.bin` |
+    | `0x10000` | Main firmware `.bin` |
+
+    **Using esptool directly:**
+
+    ```bash
+    python -m esptool \
+      --chip esp32 \
+      -b 460800 \
+      --before default_reset \
+      --after hard_reset \
+      write_flash \
+      --flash_mode dio \
+      --flash_size 4MB \
+      --flash_freq 40m \
+      0x1000  bootloader/bootloader.bin \
+      0x8000  partition_table/partition-table.bin \
+      0xd000  ota/ota_data_initial.bin \
+      0x10000 BlueRetro_<system>.bin
+    ```
+
+    <Tip>
+      If the flash fails, hold the **BOOT** button on your ESP32 board while running the command to force it into download mode.
+    </Tip>
+  </Step>
+
+  <Step title="Connect to the BlueRetro Wi-Fi access point">
+    After flashing, the ESP32 boots and creates a Wi-Fi access point named **BlueRetro**.
+
+    1. On your phone or computer, connect to the **BlueRetro** Wi-Fi network.
+    2. Open a browser and navigate to `http://192.168.4.1`.
+    3. The BlueRetro web configuration interface loads in your browser.
+
+    From here you can select your target system, configure button mappings, set multitap mode, and trigger firmware updates.
+
+    <Note>
+      The web interface is served directly from the ESP32. No internet connection or external server is required.
+    </Note>
+  </Step>
+
+  <Step title="Pair your Bluetooth controller">
+    BlueRetro uses automatic device discovery by default. To pair a controller:
+
+    1. In the web interface, confirm the system is set to your target console.
+    2. Put your Bluetooth controller into pairing mode:
+       - **PS4/PS5**: Hold **Share** + **PS** until the light bar flashes rapidly.
+       - **PS3**: Press the **PS** button after connecting via USB, then unplug.
+       - **Xbox One/Series**: Hold the **Pair** button on the top of the controller.
+       - **Switch Pro Controller**: Hold the **Sync** button on the top edge.
+       - **Wii Remote**: Hold **1** + **2** simultaneously.
+    3. BlueRetro detects and connects the controller automatically. The LED on the ESP32 board confirms the connection.
+
+    <Tip>
+      Previously paired controllers reconnect automatically when BlueRetro is powered on — no need to re-pair each time.
+    </Tip>
+  </Step>
+
+  <Step title="Play">
+    Connect your wired console controller port to the ESP32 GPIO pins (per the pinout for your system — see [Hardware](/hardware)), power on your console, and use your Bluetooth controller as normal.
+
+    For multiplayer, put additional controllers into pairing mode one at a time. BlueRetro supports up to 7 simultaneous Bluetooth connections.
+  </Step>
+</Steps>
+
+## Supported controllers
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Sony" icon="playstation">
+    PS3 (DualShock 3), PS4 (DualShock 4), PS5 (DualSense)
+  </Card>
+  <Card title="Microsoft" icon="xbox">
+    Xbox One, Xbox Series X|S
+  </Card>
+  <Card title="Nintendo" icon="n">
+    Switch Pro Controller, Joy-Con (L/R), Wii Remote, Wii Classic Controller, Wii U Pro Controller, Switch Online controllers
+  </Card>
+  <Card title="Generic HID" icon="usb">
+    Any Bluetooth BR/EDR or BLE HID device — keyboards, mice, and generic gamepads
+  </Card>
 </CardGroup>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+## Web configuration interface
+
+The BlueRetro web UI (served at `http://192.168.4.1` while connected to the BlueRetro Wi-Fi AP) lets you:
+
+- Select the target wired system
+- Remap buttons and axes per controller slot
+- Configure dead zones and axis scaling
+- Enable multitap mode for multi-player setups
+- Set up button combo macros
+- Trigger over-the-air firmware updates
+
+<Warning>
+  Changing the system setting requires a reboot of the adapter. Save your configuration before rebooting.
+</Warning>

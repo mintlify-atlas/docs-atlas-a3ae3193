@@ -1,0 +1,162 @@
+---
+title: "Other supported systems"
+description: "BlueRetro support for PC Engine/TG16, PC-FX, 3DO, Jaguar, CD-i, JVS arcade, and parallel port systems."
+keywords: ["PC Engine", "TurboGrafx", "PC-FX", "3DO", "Jaguar", "CD-i", "JVS", "parallel port", "BlueRetro"]
+---
+
+In addition to Nintendo, Sega, and PlayStation, BlueRetro supports a range of other consoles and arcade systems.
+
+---
+
+## PC Engine / TurboGrafx-16
+
+| Property | Value |
+|---|---|
+| System ID | `PCE` (4) |
+| Driver | `pce.c` / `pce_from_generic` |
+| Max players | 1 (multitap up to 5 with external adapter) |
+| Accessory support | `ACC_NONE` |
+
+The PC Engine adapter supports two controller modes:
+
+- **`DEV_PAD`** — 2-button pad (I, II, D-pad, Select, Run). Uses the standard PCE button matrix.
+- **`DEV_PAD_ALT`** — 6-button pad (I, II, III, IV, V, VI, D-pad, Select, Run). Requires an Avenue Pad 6-compatible controller.
+
+Additional modes supported:
+
+- **`DEV_MOUSE`** — PC Engine Mouse with 4-button output and 2-axis relative movement.
+- **`DEV_KB`** — PC Engine Keyboard (18-column matrix) used with PC Engine software titles that supported keyboard input.
+
+<Note>
+The 2-button / 6-button mode is toggled at runtime using the mapped `PAD_MT` button.
+</Note>
+
+---
+
+## PC-FX
+
+| Property | Value |
+|---|---|
+| System ID | `PCFX` (13) |
+| Driver | `pcfx.c` / `pcfx_from_generic` |
+| Max players | 2 |
+| Accessory support | `ACC_NONE` |
+
+The PC-FX adapter presents a 6-button gamepad (I, II, III, IV, V, VI, D-pad, Select, Run) plus two mode switches (Mode1, Mode2). The `DEV_MOUSE` mode is also supported, mapping to the PC-FX Mouse with relative axis movement.
+
+---
+
+## 3DO Interactive Multiplayer
+
+| Property | Value |
+|---|---|
+| System ID | `REAL_3DO` (9) |
+| Driver | `real.c` / `real_from_generic` |
+| Max players | 1 (daisy-chain supported by the 3DO protocol) |
+| Accessory support | `ACC_NONE` |
+
+The 3DO adapter presents the standard 3DO gamepad (D-pad, A, B, C, X, P, L, R) in `DEV_PAD` mode. In `DEV_PAD_ALT` mode, the FreeSpace 3D controller layout is used, adding analog stick axes. In `DEV_MOUSE` mode, the adapter emulates the 3DO Mouse with relative axis output.
+
+---
+
+## Atari Jaguar
+
+| Property | Value |
+|---|---|
+| System ID | `JAGUAR` (10) |
+| Driver | `jag.c` / `jag_from_generic` |
+| Max players | 2 |
+| Accessory support | `ACC_NONE` |
+
+The Jaguar adapter presents the full Jaguar controller layout including the D-pad, A, B, C, Pause, Option, and the numeric keypad (0–9, *, #) using a 4-row × 4-column matrix. In `DEV_PAD_ALT` mode, the Jaguar ProController 6DoF analog axes are also supported.
+
+---
+
+## Philips CD-i
+
+| Property | Value |
+|---|---|
+| System ID | `CDI` (7) |
+| Driver | `cdi.c` / `cdi_from_generic` |
+| Max players | 2 |
+| Accessory support | `ACC_NONE` |
+
+The CD-i adapter supports `DEV_PAD` (2-button gamepad with relative movement axes), `DEV_MOUSE` (CD-i mouse), and `DEV_KB` (CD-i keyboard). The keyboard driver uses six separate lookup tables to handle the CD-i's non-standard scancode layout.
+
+---
+
+## JVS Arcade
+
+| Property | Value |
+|---|---|
+| System ID | `JVS` (14) |
+| Driver | `jvs.c` / `jvs_from_generic` |
+| Max players | Up to 12 (WIRED_MAX_DEV) |
+| Accessory support | `ACC_NONE` |
+
+JVS (Japan Amusement Machine and Marketing Association Video game Standard) is the standard I/O protocol for modern arcade boards. BlueRetro maps Bluetooth controllers to the JVS I/O bus, allowing wireless controller input for arcade cabinet setups.
+
+The JVS adapter presents:
+
+- **10 buttons per player** (JVS_1 through JVS_10, mapped to face and shoulder buttons)
+- **Service button** and **Start button**
+- **D-pad** (4 directions)
+- **2 analog axes** (16-bit, big-endian) for joystick input
+- **Coin counter** — incremented by the mapped `PAD_MS` button
+- **Test button** — toggled via the mapped `PAD_MQ` button
+
+<Info>
+JVS supports up to 12 simultaneous players, making BlueRetro useful for large-scale arcade setups where multiple wireless controllers are required.
+</Info>
+
+---
+
+## Parallel port systems
+
+BlueRetro supports four parallel port modes for systems that use direct GPIO-style controller ports.
+
+| System ID | Enum value | Variant |
+|---|---|---|
+| `PARALLEL_1P` | 1 | Single player, push-pull outputs |
+| `PARALLEL_2P` | 2 | Two player, push-pull outputs |
+| `PARALLEL_1P_OD` | 21 | Single player, open-drain outputs |
+| `PARALLEL_2P_OD` | 22 | Two player, open-drain outputs |
+
+The open-drain variants (`_OD`) are used with 5 V logic systems where the BlueRetro ESP32 must not drive the line high actively. Use the 3.3 V push-pull variants for systems with compatible logic levels.
+
+The parallel port driver (`parallel_1p.c`, `parallel_2p.c`) maps the generic gamepad buttons directly to GPIO output pins:
+
+| Button | Pin (P1) |
+|---|---|
+| D-pad Up | GPIO 3 |
+| D-pad Down | GPIO 5 |
+| D-pad Left | GPIO 18 |
+| D-pad Right | GPIO 23 |
+| Button 1 (RB Down) | GPIO 26 |
+| Button 2 (RB Right) | GPIO 27 |
+| Button 3 (RB Left) | GPIO 19 |
+| Button 4 (RB Up) | GPIO 21 |
+
+**Supported hardware with parallel port configs:**
+
+- NeoGeo (AES / MVS)
+- Supergun / JAMMA adapters
+- Atari 2600 / 7800
+- Sega Master System
+
+<Warning>
+Verify the voltage levels of your target system before selecting push-pull vs open-drain mode. Using push-pull outputs on a 5 V system that also drives the lines can damage the ESP32.
+</Warning>
+
+---
+
+## SEA board
+
+| Property | Value |
+|---|---|
+| System ID | `SEA_BOARD` (23) |
+| Driver | `sea.c` / `sea_from_generic` |
+| Max players | 1 |
+| Accessory support | `ACC_NONE` |
+
+The SEA board is a custom adapter targeting GBA HD and Supergun applications. It uses the same pin mapping as the parallel port systems but adds an OSD (on-screen display) overlay state machine. The SEA board configuration is also stored in `configs/hw1/gbahd` and `configs/hw2/gbahd`.

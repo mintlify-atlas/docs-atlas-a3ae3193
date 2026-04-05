@@ -1,0 +1,86 @@
+---
+title: "Pairing controllers"
+description: "How to connect Bluetooth controllers to BlueRetro, including inquiry modes and per-controller pairing steps."
+---
+
+BlueRetro must discover a controller before it can be used. This discovery process is called **Bluetooth inquiry**. Once a controller is paired and a link key is stored, it reconnects automatically on subsequent power-ons.
+
+<Note>
+  BlueRetro supports up to **7 simultaneously connected Bluetooth devices**. Attempting to connect an eighth device while seven are already active will be ignored.
+</Note>
+
+## Inquiry modes
+
+Two inquiry modes control how BlueRetro scans for new devices:
+
+| Mode | Constant | Behavior |
+|------|----------|----------|
+| **Automatic** | `INQ_AUTO` | BlueRetro continuously scans for connectable Bluetooth devices. No action needed beyond putting the controller in pairing mode. |
+| **Manual** | `INQ_MANUAL` | Bluetooth inquiry is triggered only by a button combo on a connected controller (`BR_COMBO_BT_INQUIRY`). Use this mode to avoid accidental pairings. |
+
+You can set the inquiry mode from the BlueRetro web configuration interface.
+
+## Pairing each controller type
+
+<Steps>
+  <Step title="Generic HID controllers (BT_HID_GENERIC)">
+    Put the controller in pairing/discoverable mode using the method described in its manual. BlueRetro will discover and connect it automatically when `INQ_AUTO` is active, or after triggering inquiry manually.
+
+    **Xbox Series X|S / Xbox One S (BLE):** Hold the **Bind** button on the top of the controller for 3 seconds until the Xbox button blinks rapidly.
+
+    **Google Stadia, Atari VCS, Flydigi Apex 3, Xiaomi Mi, and other generic HID devices:** Follow the manufacturer's pairing instructions to enter discoverable mode.
+  </Step>
+  <Step title="PS3 DualShock 3 (BT_PS3)">
+    The DualShock 3 requires a USB cable pairing step the first time it is used.
+
+    1. Connect the DualShock 3 to a powered BlueRetro device using a USB Mini-B cable.
+    2. BlueRetro writes its Bluetooth address into the controller.
+    3. Disconnect the USB cable, then press the **PS** button to connect wirelessly.
+
+    On subsequent uses, pressing the **PS** button alone is sufficient to reconnect.
+  </Step>
+  <Step title="PS4 DualShock 4 (BT_PS)">
+    Hold **Share** and **PS** simultaneously until the lightbar flashes rapidly. The controller is now in pairing mode and BlueRetro will connect to it.
+  </Step>
+  <Step title="PS5 DualSense (BT_PS — subtype BT_PS5_DS)">
+    Hold **Create** (the button left of the touchpad) and **PS** simultaneously until the lightbar flashes blue. BlueRetro will connect to it.
+  </Step>
+  <Step title="Nintendo Switch Pro Controller (BT_SW)">
+    Press and hold the **pairing button** on the top edge of the controller (next to the USB-C port) until the player LED indicators flash. BlueRetro will connect to it.
+  </Step>
+  <Step title="Nintendo Switch Joy-Con (BT_SW — BT_SW_LEFT_JOYCON / BT_SW_RIGHT_JOYCON)">
+    Press and hold the **sync button** on the side rail of the Joy-Con (the small button on the flat side) until the player LEDs flash. Each Joy-Con is treated as a separate Bluetooth device and occupies one of the 7 slots.
+  </Step>
+  <Step title="Nintendo Switch NSO controllers (BT_SW subtypes)">
+    NSO NES, SNES, N64, and Mega Drive controllers follow the same pairing procedure as the Switch Pro Controller: hold the **pairing button** on the controller's side or top edge until the LEDs flash.
+  </Step>
+  <Step title="Wii Remote / Wiimote (BT_WII)">
+    Two methods are available:
+
+    - **Buttons 1 + 2:** Press and hold **1** and **2** simultaneously on the Wii Remote. The player LEDs will flash.
+    - **Red sync button:** Open the battery cover and press the small red **SYNC** button. Use this method when pairing for the first time or after a reset.
+
+    Wii extensions (Nunchuck, Classic Controller, Classic Controller Pro, Wii U Pro Controller) are detected automatically when attached to or used with the Wiimote.
+  </Step>
+</Steps>
+
+## Button combo commands
+
+Connected controllers can trigger system actions on BlueRetro through button combinations. The combos are assigned in the web configuration interface and map to the following actions:
+
+| Combo constant | Action |
+|----------------|--------|
+| `BR_COMBO_BT_INQUIRY` | Trigger a Bluetooth inquiry scan to pair a new controller |
+| `BR_COMBO_FACTORY_RESET` | Reset all BlueRetro configuration to factory defaults |
+| `BR_COMBO_SYS_RESET` | Reboot the BlueRetro device |
+| `BR_COMBO_SYS_POWER_OFF` | Power off the BlueRetro device |
+| `BR_COMBO_DEEP_SLEEP` | Put BlueRetro into deep sleep to conserve power |
+| `BR_COMBO_WIRED_RST` | Reset the wired output (console-side reset signal) |
+
+<Tip>
+  In `INQ_MANUAL` mode, use `BR_COMBO_BT_INQUIRY` on an already-connected controller to trigger discovery without touching BlueRetro's hardware button.
+</Tip>
+
+<Warning>
+  `BR_COMBO_FACTORY_RESET` erases all saved controller pairings and configuration. You will need to re-pair all controllers after using this command.
+</Warning>

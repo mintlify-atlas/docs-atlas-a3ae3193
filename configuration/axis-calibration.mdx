@@ -1,0 +1,131 @@
+---
+title: "Axis calibration"
+description: "Tune analog stick and trigger behavior with neutral points, deadzones, scaling curves, and diagonal correction modes."
+keywords: ["axis calibration", "deadzone", "scaling", "analog stick", "trigger", "s-curve"]
+---
+
+BlueRetro provides per-axis calibration metadata and a choice of scaling algorithms to map raw Bluetooth input values accurately to whatever range the wired console expects.
+
+## Axis IDs
+
+BlueRetro exposes the following axis identifiers. The first six (`AXIS_LX` through `TRIG_R`) are the standard analog axes; the remainder handle D-pad and face button digital directions as pseudo-axes.
+
+| Value | Constant | Description |
+|-------|----------|-------------|
+| `0` | `AXIS_LX` | Left stick, X axis |
+| `1` | `AXIS_LY` | Left stick, Y axis |
+| `2` | `AXIS_RX` | Right stick, X axis |
+| `3` | `AXIS_RY` | Right stick, Y axis |
+| `4` | `TRIG_L` | Left trigger (analog) |
+| `5` | `TRIG_R` | Right trigger (analog) |
+| `6` | `TRIG_LS` | Left trigger shoulder (digital threshold) |
+| `7` | `TRIG_RS` | Right trigger shoulder (digital threshold) |
+| `8` | `DPAD_LEFT` | D-pad left direction |
+| `9` | `DPAD_RIGHT` | D-pad right direction |
+| `10` | `DPAD_DOWN` | D-pad down direction |
+| `11` | `DPAD_UP` | D-pad up direction |
+| `12` | `BTN_LEFT` | Face button left direction |
+| `13` | `BTN_RIGHT` | Face button right direction |
+| `14` | `BTN_DOWN` | Face button down direction |
+| `15` | `BTN_UP` | Face button up direction |
+
+**Axis limits:**
+- Standard adapters: up to **6 analog axes** (`ADAPTER_MAX_AXES = 6`)
+- PS2 mode: up to **16 axes** (`ADAPTER_PS2_MAX_AXES = 16`)
+
+## Calibration metadata (`ctrl_meta`)
+
+Each axis carries a `ctrl_meta` struct that defines how raw input values are interpreted and scaled.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `neutral` | `int32_t` | Raw value reported when the axis is at rest (center point) |
+| `deadzone` | `int32_t` | Raw value range around neutral that is treated as zero |
+| `abs_max` | `int32_t` | Maximum raw value in the positive direction |
+| `abs_min` | `int32_t` | Maximum raw value in the negative direction |
+| `polarity` | `int32_t` | `0` = normal, `1` = inverted |
+| `size_min` | `int32_t` | Minimum output range size |
+| `size_max` | `int32_t` | Maximum output range size |
+| `relative` | `int32_t` | Non-zero if the axis reports relative (delta) values rather than absolute position |
+
+<Note>
+  The pull-back limit `MAX_PULL_BACK = 0.95` caps how far toward the edge of the range the scaling algorithm can push an output value, preventing clipping artifacts at extremes.
+</Note>
+
+## Scaling modes
+
+The `algo` field in a mapping entry selects the curve applied when translating input magnitude to output magnitude.
+
+<AccordionGroup>
+  <Accordion title="LINEAR — standard linear scaling">
+    Applies a straight proportional mapping from input to output. The output increases at a constant rate across the full range. This is the default and suits most controllers and consoles.
+
+    **Best for:** general use, controllers with consistent stick hardware.
+  </Accordion>
+  <Accordion title="AGGRESSIVE — more sensitive at extremes">
+    Increases sensitivity near the edges of the axis range, making small deflections near center less pronounced while pushing toward full output earlier in the travel. Useful when a controller's sticks physically max out before the expected raw maximum.
+
+    **Best for:** controllers with short stick throws; aiming precision in action games.
+  </Accordion>
+  <Accordion title="RELAXED — less sensitive">
+    Reduces output magnitude relative to input, making the axis feel softer. The center portion of travel covers a larger portion of the output range.
+
+    **Best for:** controllers with very sensitive sticks; driving or flight games requiring fine control.
+  </Accordion>
+  <Accordion title="WIDE — wider effective range">
+    Stretches the usable output range to cover more of the physical stick travel, effectively reducing dead band and giving finer resolution across the full sweep.
+
+    **Best for:** compensating for controllers with narrow usable axis ranges.
+  </Accordion>
+  <Accordion title="S_CURVE — S-curve response">
+    Applies an S-shaped transfer function: reduced sensitivity near center and near the extremes, with peak sensitivity in the mid-travel zone. Produces a more natural, graduated feel.
+
+    **Best for:** racing games; any game where a smooth ramp-up is more important than instant response.
+  </Accordion>
+  <Accordion title="PASSTHROUGH — raw values, no scaling">
+    Disables all scaling and passes the raw input value directly to the output pipeline with no transformation. The `neutral`, `deadzone`, and range fields are ignored.
+
+    **Best for:** debugging; consoles that perform their own axis calibration internally.
+  </Accordion>
+</AccordionGroup>
+
+## Diagonal scaling modes
+
+Diagonal scaling corrects the input shape when the source controller and target console use different coordinate geometries for the analog stick.
+
+| Value | Constant | Description |
+|-------|----------|-------------|
+| `0` | `DIAG_PASSTHROUGH` | No diagonal correction — raw XY values passed through |
+| `1` | `CIRCLE_SQUARE` | Convert circular input range to square output range |
+| `2` | `CIRCLE_HEX` | Convert circular input range to hexagonal output range |
+| `3` | `SQUARE_CIRCLE` | Convert square input range to circular output range |
+| `4` | `SQUARE_HEX` | Convert square input range to hexagonal output range |
+
+<Tip>
+  Most modern Bluetooth controllers report a circular stick range. If the target console expects a square range (common on older hardware), use `CIRCLE_SQUARE` to ensure the corners of the D-pad directions are reachable.
+</Tip>
+
+## How calibration is applied
+
+At runtime, BlueRetro processes each axis value through this sequence:
+
+<Steps>
+  <Step title="Read raw value">
+    The driver reads the raw axis integer from the Bluetooth HID report.
+  </Step>
+  <Step title="Apply neutral offset">
+    Subtract the `neutral` value to center the axis at zero.
+  </Step>
+  <Step title="Apply deadzone">
+    Values within the `deadzone` radius of zero are clamped to zero, eliminating stick drift.
+  </Step>
+  <Step title="Apply polarity">
+    If `polarity` is set, invert the sign of the value.
+  </Step>
+  <Step title="Scale to output range">
+    Apply the selected scaling curve (`LINEAR`, `S_CURVE`, etc.), respecting `abs_max`, `abs_min`, `size_min`, and `size_max`. The output is clamped to `MAX_PULL_BACK = 0.95` of the target range.
+  </Step>
+  <Step title="Apply diagonal correction">
+    If a diagonal scaling mode other than `DIAG_PASSTHROUGH` is selected, transform the (X, Y) pair to match the target coordinate geometry.
+  </Step>
+</Steps>

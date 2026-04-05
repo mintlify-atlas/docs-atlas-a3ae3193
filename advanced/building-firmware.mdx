@@ -1,0 +1,177 @@
+---
+title: "Building firmware from source"
+description: "Compile BlueRetro firmware for your target system using ESP-IDF."
+---
+
+## Prerequisites
+
+Before building BlueRetro, ensure you have the following installed:
+
+- **ESP-IDF** v5.5.0 or compatible — the Espressif IoT Development Framework
+- **CMake** 3.5 or later (required by `CMakeLists.txt`)
+- **Python** 3.8 or later (used by `idf.py` and build tooling)
+- **Git** with submodule support
+
+<Note>
+The official CI builds use the Docker image `ghcr.io/darthcloud/idf-blueretro:v5.5.0_2024-12-02`, which bundles a known-good ESP-IDF version. Using this image is the most reliable way to reproduce release builds.
+</Note>
+
+## Build environment variables
+
+BlueRetro's `CMakeLists.txt` derives the project name from two environment variables:
+
+```cmake
+project("BlueRetro$ENV{BR_HW}$ENV{BR_SYS}")
+```
+
+| Variable | Purpose | Example values |
+|----------|---------|---------------|
+| `BR_HW`  | Hardware revision prefix | `_hw1`, `_hw2` |
+| `BR_SYS` | System/console target prefix | `_genesis`, `_n64`, `_playstation`, … |
+
+Both variables must be set before invoking `idf.py`. The leading underscore is part of the value (e.g. `BR_HW=_hw2`).
+
+## Available system targets
+
+The following targets are supported (matching the `configs/hw1/` and `configs/hw2/` subdirectories):
+
+<CardGroup cols={4}>
+  <Card title="3do" />
+  <Card title="cdi" />
+  <Card title="dreamcast" />
+  <Card title="gamecube" />
+  <Card title="gbahd" />
+  <Card title="genesis" />
+  <Card title="jaguar" />
+  <Card title="jvs_arcade" />
+  <Card title="n64" />
+  <Card title="nes" />
+  <Card title="parallel_1p" />
+  <Card title="parallel_1p_3v3" />
+  <Card title="parallel_2p" />
+  <Card title="parallel_2p_3v3" />
+  <Card title="pc_engine" />
+  <Card title="pcfx" />
+  <Card title="playstation" />
+  <Card title="saturn" />
+  <Card title="snes" />
+  <Card title="universal" />
+  <Card title="virtualboy" />
+  <Card title="wii_extension" />
+</CardGroup>
+
+## Build steps
+
+<Steps>
+  <Step title="Install ESP-IDF">
+    Follow the [ESP-IDF Getting Started guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/) to install the framework and its toolchain.
+
+    After installation, source the export script to put `idf.py` on your PATH:
+
+    ```bash
+    . $IDF_PATH/export.sh
+    ```
+  </Step>
+
+  <Step title="Clone the repository">
+    BlueRetro uses Git submodules for its Bluetooth stack and other components. Clone with `--recursive` to fetch them all at once:
+
+    ```bash
+    git clone --recursive https://github.com/darthcloud/BlueRetro.git
+    cd BlueRetro
+    ```
+
+    If you already cloned without `--recursive`, initialize submodules manually:
+
+    ```bash
+    git submodule update --init --recursive
+    ```
+  </Step>
+
+  <Step title="Copy the system sdkconfig">
+    Each hardware/system combination has a pre-tuned `sdkconfig` file stored under `configs/`. Copy the one that matches your target before building:
+
+    ```bash
+    cp configs/hw2/genesis sdkconfig
+    ```
+
+    Replace `hw2` with `hw1` and `genesis` with your target system as needed.
+  </Step>
+
+  <Step title="Set environment variables">
+    Export `BR_HW` and `BR_SYS` to identify your hardware revision and target system. The values must include the leading underscore:
+
+    ```bash
+    export BR_HW=_hw2
+    export BR_SYS=_genesis
+    ```
+
+    Adjust the values to match your hardware and the system you copied the `sdkconfig` for in the previous step.
+  </Step>
+
+  <Step title="Set the ESP32 target">
+    BlueRetro targets the original ESP32 chip:
+
+    ```bash
+    idf.py set-target esp32
+    ```
+  </Step>
+
+  <Step title="Build the firmware">
+    Run the full build. The `reconfigure` step re-applies CMake settings after the environment variables have been set:
+
+    ```bash
+    idf.py reconfigure build
+    ```
+
+    Build artifacts are placed in the `build/` directory:
+
+    | File | Description |
+    |------|-------------|
+    | `build/BlueRetro*.bin` | Main application firmware |
+    | `build/bootloader/bootloader.bin` | ESP32 bootloader |
+    | `build/partition_table/partition-table.bin` | Partition table |
+    | `build/ota_data_initial.bin` | OTA data partition |
+  </Step>
+
+  <Step title="Flash the firmware">
+    Flash directly using `idf.py` (requires the device to be connected via USB):
+
+    ```bash
+    idf.py flash
+    ```
+
+    Alternatively, use the bundled `flash_blueretro.py` helper script for a standalone flash operation. See the [Flashing firmware](/advanced/flashing) page for full details.
+  </Step>
+</Steps>
+
+## Configuration files layout
+
+System-specific `sdkconfig` files live under `configs/` organized by hardware revision:
+
+```
+configs/
+├── hw1/
+│   ├── genesis
+│   ├── n64
+│   ├── playstation
+│   └── … (one file per system target)
+└── hw2/
+    ├── genesis
+    ├── n64
+    ├── playstation
+    └── … (one file per system target)
+```
+
+Always copy the correct file for your hardware revision before building. Mismatching hardware and sdkconfig will produce a firmware that does not work correctly.
+
+## Default SDK settings
+
+`sdkconfig.defaults` is applied on top of the system-specific config and sets project-wide defaults such as:
+
+- 4 MB flash size (`CONFIG_ESPTOOLPY_FLASHSIZE_4MB`)
+- Bluetooth Classic + BLE dual mode (`CONFIG_BTDM_CTRL_MODE_BTDM`)
+- Up to 7 concurrent BLE connections and 7 BR/EDR ACL connections
+- Single-core FreeRTOS (`CONFIG_FREERTOS_UNICORE`)
+- SPIFFS filesystem for the storage partition
+- Console UART baud rate: 921600

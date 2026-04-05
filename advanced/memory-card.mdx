@@ -1,0 +1,114 @@
+---
+title: "Virtual memory card"
+description: "How BlueRetro emulates a memory card in ESP32 flash memory for PlayStation and Dreamcast."
+---
+
+## Overview
+
+BlueRetro can emulate a memory card entirely in software, storing save data on the ESP32's internal SPIFFS filesystem. The virtual memory card survives power cycles and behaves like a physical card to the console.
+
+## Supported systems
+
+<CardGroup cols={2}>
+  <Card title="PlayStation (PSX / PS2)" icon="gamepad">
+    Emulates a standard PS1/PS2 memory card on the controller port. Both PSX and PS2 (`PSX`, `PS2` system IDs) are supported.
+  </Card>
+  <Card title="Dreamcast (VMU)" icon="gamepad">
+    Emulates a Visual Memory Unit on the Dreamcast controller bus (`DC` system ID).
+  </Card>
+</CardGroup>
+
+## Memory layout
+
+The virtual memory card is implemented in `main/adapter/memory_card.c` and `memory_card.h`. It uses a flat 128 KB buffer divided into fixed-size blocks:
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `MC_BUFFER_SIZE` | `128 × 1024` = 131,072 bytes | Total memory card capacity |
+| `MC_BUFFER_BLOCK_SIZE` | `4 × 1024` = 4,096 bytes | Size of each block |
+| `MC_BUFFER_BLOCK_CNT` | `32` | Number of blocks (`128 KB / 4 KB`) |
+
+Each block is allocated independently from the ESP32's DMA-capable heap at startup (`MALLOC_CAP_DMA`), which allows direct use in hardware DMA transfers.
+
+## Storage file
+
+Save data is persisted to the ESP32 filesystem at:
+
+```
+/fs/mc.bin
+```
+
+This path is defined as `MEMORY_CARD_FILE` in `main/system/fs.h`. The file is exactly `MC_BUFFER_SIZE` (128 KB) and is created automatically on first boot if it does not exist.
+
+The full filesystem root (`/fs`) is a SPIFFS partition named `storage` in the partition table, located after the three OTA application partitions.
+
+## Enabling the virtual memory card
+
+The memory card accessory mode is set per output port via the `acc_mode` field of `out_cfg`:
+
+| `acc_mode` value | Effect |
+|-----------------|--------|
+| `ACC_NONE` (0) | No accessory emulation |
+| `ACC_MEM` (1) | Memory card only |
+| `ACC_RUMBLE` (2) | Rumble only |
+| `ACC_BOTH` (3) | Memory card + rumble simultaneously |
+
+Set `acc_mode` to `ACC_MEM` or `ACC_BOTH` in the web configuration interface for the port you want to use the virtual memory card on.
+
+<Note>
+The bank select feature (`banksel` in `global_cfg`) must be set to a value less than `CONFIG_BANKSEL_MAX` (4) for the memory card to initialize. Values 0–3 select one of four independent save banks. Setting `banksel` to `CONFIG_BANKSEL_DBG` (0xDB) disables persistence entirely, which is used for debugging.
+</Note>
+
+## Save bank selection
+
+BlueRetro supports up to **4 independent save banks** (`CONFIG_BANKSEL_MAX = 4`). The active bank is selected by the `banksel` field in `global_cfg` (values `0`–`3`). Each bank maps to a separate region within `/fs/mc.bin`, allowing multiple save sets for the same game.
+
+## Internal API
+
+The memory card subsystem exposes the following functions (defined in `memory_card.h`):
+
+```c
+/* Allocate per-block DMA buffers */
+int32_t mc_init_mem(void);
+
+/* Restore save data from filesystem and start persistence timer */
+int32_t mc_init(void);
+
+/* Schedule a deferred write to /fs/mc.bin */
+void mc_storage_update(void);
+
+/* Read size bytes from addr into data */
+void mc_read(uint32_t addr, uint8_t *data, uint32_t size);
+
+/* Write size bytes from data to addr and mark block dirty */
+void mc_write(uint32_t addr, uint8_t *data, uint32_t size);
+
+/* Return a direct pointer into the buffer at addr */
+uint8_t *mc_get_ptr(uint32_t addr);
+
+/* Return bitmask of dirty blocks pending write */
+uint32_t mc_get_state(void);
+
+/* Return true once mc_init() has completed successfully */
+bool mc_get_ready(void);
+```
+
+## How persistence works
+
+BlueRetro uses a **deferred write** strategy to reduce flash wear:
+
+1. When the console writes to the memory card (`mc_write`), the affected 4 KB block is marked dirty in a bitmask and a feedback event (`FB_TYPE_MEM_WRITE`) is queued.
+2. `mc_storage_update()` arms a one-shot timer for **1 second** (1,000,000 µs).
+3. When the timer fires, `mc_store_spread()` writes **one dirty block** at a time to `/fs/mc.bin`, then re-arms the timer for **20 ms** if more dirty blocks remain.
+
+This spreads flash writes over time instead of writing the entire 128 KB at once, reducing latency spikes during gameplay.
+
+<Warning>
+Pulling power immediately after a save operation could result in data loss if the 1-second deferred timer has not yet fired. Wait a few seconds after the console confirms a save before powering down.
+</Warning>
+
+## Backup and restore
+
+The memory card file is a raw binary image at `/fs/mc.bin`. You can back it up or restore it using the BlueRetro web interface, or by accessing the SPIFFS partition directly via a tool such as `mkspiffs` if you have a direct flash dump.
+
+To reset the memory card to a blank state, delete `/fs/mc.bin` via the web interface — BlueRetro will create a fresh blank file on the next boot.

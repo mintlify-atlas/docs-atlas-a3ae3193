@@ -1,0 +1,119 @@
+---
+title: "Game ID detection"
+description: "How BlueRetro reads game identifiers from the console and loads per-game configuration profiles."
+---
+
+## Overview
+
+BlueRetro can detect which game is currently running and automatically switch to a game-specific button mapping or configuration profile. This allows, for example, a fighting game to use a custom layout while an adventure game falls back to the default mapping — all without manual intervention.
+
+## How it works
+
+The console sends feedback data back to the adapter during normal communication. BlueRetro inspects this feedback stream to extract a game identifier:
+
+1. The wired driver receives a feedback packet (`struct raw_fb`) from the console.
+2. The packet's `type` field is checked against known feedback types.
+3. If the type is `FB_TYPE_GAME_ID` or `FB_TYPE_SYS_ID`, the data payload is passed to `gid_update()` or `gid_update_sys()` respectively.
+4. When the detected ID changes, BlueRetro reloads the configuration using `config_init(GAMEID_CFG)`.
+
+```c
+/* Feedback type constants (adapter.h) */
+FB_TYPE_GAME_ID  /* Game-specific identifier from console */
+FB_TYPE_SYS_ID   /* System-level identifier from console */
+```
+
+## Supported systems
+
+Game ID detection is currently implemented for the following systems (from `gameid.c`):
+
+| System | ID Format | Notes |
+|--------|-----------|-------|
+| **N64** | 8-byte hex prefix | Encoded as 16 hex characters, e.g. `0102030405060708` |
+| **GameCube** | 8-byte hex prefix | Same encoding as N64 |
+| **PlayStation (PSX)** | ASCII game code | Sanitized via `ps1_gid_sanitize()`, e.g. `SLUS-00214` |
+| **PlayStation 2** | ASCII game code | Same sanitization as PSX |
+
+<Note>
+Systems not listed above do not currently send game ID feedback. The `gid_update_sys()` path handles system-level identifiers for other platforms when available.
+</Note>
+
+## Internal API
+
+The game ID subsystem is defined in `main/adapter/gameid.h`:
+
+```c
+/*
+ * Process a game-ID feedback packet.
+ * Returns 1 if the game ID changed, 0 if unchanged.
+ */
+int32_t gid_update(struct raw_fb *fb_data);
+
+/*
+ * Process a system-ID feedback packet.
+ * Returns 1 if the ID changed, 0 if unchanged.
+ */
+int32_t gid_update_sys(struct raw_fb *fb_data);
+
+/*
+ * Return the current game ID string (up to 22 characters + null terminator).
+ */
+char *gid_get(void);
+```
+
+The detected game ID is stored as a null-terminated ASCII string of up to 22 characters (`GAME_ID_BUF_LEN - 1`).
+
+## Configuration sources
+
+BlueRetro maintains two configuration slots (defined in `config.h`):
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `DEFAULT_CFG` | `0` | The default user configuration, always present |
+| `GAMEID_CFG` | `1` | A per-game override loaded when a matching game ID is detected |
+
+When a game is detected, `config_init(GAMEID_CFG)` is called to load the game-specific profile. If no matching profile exists for the detected ID, the `DEFAULT_CFG` is used instead.
+
+## Bank select and game profiles
+
+The `banksel` field in `global_cfg` selects one of up to **four save banks** (`CONFIG_BANKSEL_MAX = 4`, values `0`–`3`). Banks serve a dual purpose:
+
+- They select which memory card save bank is active (see [Virtual memory card](/advanced/memory-card)).
+- Combined with a game ID, they allow different controller profiles for the same game across different save files or playthroughs.
+
+## Creating per-game profiles
+
+To create a game-specific configuration profile:
+
+<Steps>
+  <Step title="Detect the game ID">
+    Launch the game with BlueRetro connected and monitor the serial output (baud rate 921600). When a game ID is detected, the firmware logs:
+
+    ```
+    # gid_update: SLUS-00214
+    ```
+
+    Note the exact game ID string printed.
+  </Step>
+
+  <Step title="Open the web configuration interface">
+    Navigate to the BlueRetro web configuration page and locate the **Game ID** section.
+  </Step>
+
+  <Step title="Create a profile for the detected ID">
+    Enter the game ID string exactly as printed in the log and configure the button mappings, device mode, or accessory mode as desired for that game.
+  </Step>
+
+  <Step title="Save and test">
+    Save the profile. The next time that game is detected, BlueRetro will automatically load the game-specific configuration.
+  </Step>
+</Steps>
+
+<Tip>
+You can have multiple per-game profiles stored simultaneously. BlueRetro matches the detected game ID against all stored `GAMEID_CFG` entries and loads the first match.
+</Tip>
+
+## Technical details
+
+The game ID buffer length is fixed at 23 bytes (`GAME_ID_BUF_LEN = 23`): 22 usable characters plus a null terminator. For binary identifiers (N64, GC), the 8-byte payload is formatted as 16 uppercase hex characters. For PlayStation titles, the raw ASCII disc ID is copied and sanitized to remove characters that could cause filesystem or config lookup issues.
+
+A change in game ID (detected by `memcmp` between the previous and current value) triggers a configuration reload. No change returns `0`; a change returns `1` so the caller can take appropriate action.

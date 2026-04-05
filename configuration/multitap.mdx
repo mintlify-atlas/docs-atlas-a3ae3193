@@ -1,0 +1,101 @@
+---
+title: "Multitap configuration"
+description: "Enable multitap adapters to support up to 12 simultaneous wired ports and 7 Bluetooth controllers across SNES, Genesis, Saturn, PlayStation, and JVS."
+keywords: ["multitap", "multiplayer", "4 player", "8 player", "SNES", "Genesis", "Saturn", "PlayStation", "JVS"]
+---
+
+BlueRetro supports multitap adapters and multi-controller configurations on several retro consoles, enabling simultaneous input from multiple Bluetooth controllers routed to multiple wired ports.
+
+## Device limits
+
+| Limit | Constant | Value |
+|-------|----------|-------|
+| Maximum Bluetooth controllers | `BT_MAX_DEV` | **7** |
+| Maximum wired ports | `WIRED_MAX_DEV` | **12** |
+
+<Info>
+  The Bluetooth limit of 7 devices is imposed by the Bluetooth specification. The wired limit of 12 reflects the maximum the Saturn-style JVS protocol can address.
+</Info>
+
+## Multitap modes
+
+Set `multitap_cfg` in `global_cfg` to one of the following values.
+
+| Value | Constant | Description |
+|-------|----------|-------------|
+| `0` | `MT_NONE` | No multitap — standard single or dual port operation |
+| `1` | `MT_SLOT_1` | Multitap connected to port 1 |
+| `2` | `MT_SLOT_2` | Multitap connected to port 2 |
+| `3` | `MT_DUAL` | Multitaps in both ports simultaneously |
+| `4` | `MT_ALT` | Alternate multitap mode (console-specific behavior) |
+
+<Warning>
+  Changing the multitap mode requires a wired interface reset. BlueRetro detects the change automatically and resets the wired core.
+</Warning>
+
+## Per-console multitap details
+
+<AccordionGroup>
+  <Accordion title="SNES — up to 5 players">
+    The SNES multitap plugs into a single controller port and exposes four additional ports from that slot.
+
+    - Use `MT_SLOT_1` when the multitap is in port 1.
+    - Use `MT_SLOT_2` when the multitap is in port 2.
+    - Use `MT_DUAL` when multitaps occupy both ports, enabling up to 5 simultaneous players.
+
+    Each port uses a standard SNES controller mapping. `DEV_PAD_ALT` is not required for multitap use on SNES.
+  </Accordion>
+  <Accordion title="Mega Drive / Genesis — up to 8 players">
+    The Genesis EA multitap daisy-chains off a single DB9 port, branching into four sub-ports.
+
+    - Use `MT_SLOT_1` or `MT_SLOT_2` for a single multitap (up to 5 players total).
+    - Use `MT_DUAL` to activate multitaps on both DB9 ports, supporting up to **8 simultaneous players**.
+
+    Set `dev_mode` to `DEV_PAD_ALT` on the relevant ports to enable the 6-button layout when using 6-button controllers through the multitap.
+  </Accordion>
+  <Accordion title="Saturn — up to 8 players">
+    The Saturn multitap connects to one of the two controller ports and provides six additional sub-ports.
+
+    - Use `MT_SLOT_1` or `MT_SLOT_2` for a single multitap (up to 7 players total).
+    - Use `MT_DUAL` with two multitaps for up to **8 simultaneous players**.
+
+    BlueRetro's `WIRED_MAX_DEV = 12` allows the full Saturn multi-controller complement including memory card slots.
+  </Accordion>
+  <Accordion title="PlayStation — up to 8 players">
+    PlayStation multitap adapters (SCPH-1070 and equivalents) connect to one or both controller ports.
+
+    - Use `MT_SLOT_1` or `MT_SLOT_2` for a single multitap.
+    - Use `MT_DUAL` for multitaps on both ports, supporting up to **8 simultaneous players**.
+
+    Rumble and memory card (`acc_mode`) settings are honored per port when using the PlayStation multitap.
+  </Accordion>
+  <Accordion title="JVS (arcade) — up to 12 players">
+    JVS (Japan Amusement Machine and Marketing Association Video Standard) uses a serial bus that can address many devices. BlueRetro supports up to **12 simultaneous JVS player inputs** (`WIRED_MAX_DEV = 12`).
+
+    Set `multitap_cfg` to `MT_SLOT_1` to enable JVS multi-player mode. `MT_DUAL` and `MT_SLOT_2` are not applicable for JVS.
+  </Accordion>
+  <Accordion title="MT_ALT — alternate mode">
+    `MT_ALT` activates a console-specific alternate multitap protocol. On systems that support it, this may select a different multitap chip protocol or a non-standard player addressing scheme. Refer to the wired system driver for the specific console to understand the behavior of this mode for your hardware.
+  </Accordion>
+</AccordionGroup>
+
+## Configuring multitap via the web interface
+
+<Steps>
+  <Step title="Open the web interface">
+    Connect to the **BlueRetro** WiFi access point and navigate to `http://192.168.4.1`.
+  </Step>
+  <Step title="Select the multitap mode">
+    In the **Global** settings section, find the **Multitap** dropdown and choose the mode that matches your hardware setup (`None`, `Slot 1`, `Slot 2`, `Dual`, or `Alt`).
+  </Step>
+  <Step title="Configure each port">
+    Scroll down to the per-port settings. For each active port, set **Device mode** and **Accessory mode** as required. Ports that are part of a multitap chain appear as separate port entries.
+  </Step>
+  <Step title="Save and reset">
+    Click **Save**. BlueRetro will write the config to `/fs/config.bin` and automatically reset the wired interface to apply the multitap configuration.
+  </Step>
+</Steps>
+
+<Tip>
+  For the best multiplayer experience, connect all Bluetooth controllers before saving the multitap configuration, so BlueRetro can assign each controller to a specific wired port.
+</Tip>

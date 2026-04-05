@@ -1,0 +1,111 @@
+---
+title: "Web configuration interface"
+description: "Connect to BlueRetro's built-in WiFi access point to configure button mapping, device modes, accessories, and more from your browser."
+keywords: ["web config", "wifi", "access point", "configuration", "settings"]
+---
+
+BlueRetro hosts a built-in WiFi access point and web interface so you can configure every aspect of the adapter without installing any software.
+
+## Connecting to the interface
+
+<Steps>
+  <Step title="Power on BlueRetro">
+    Connect the adapter to your console or a USB power source. BlueRetro broadcasts a WiFi access point named **BlueRetro** as soon as it boots.
+  </Step>
+  <Step title="Join the BlueRetro WiFi network">
+    On your phone, tablet, or computer, open your WiFi settings and connect to the **BlueRetro** network. No password is required.
+  </Step>
+  <Step title="Open the web interface">
+    Navigate to `http://192.168.4.1` in your browser. The configuration interface loads immediately — no internet connection is needed.
+  </Step>
+</Steps>
+
+<Note>
+  BlueRetro continues to scan for and communicate with Bluetooth controllers while the web interface is open. You do not need to disconnect your controllers to access settings.
+</Note>
+
+## Where config is stored
+
+The adapter persists your configuration to the ESP32 filesystem at `/fs/config.bin`. This file is read at boot and written whenever you save changes through the web interface.
+
+| File | Purpose |
+|------|---------|
+| `/fs/config.bin` | Active configuration (all ports, all mappings) |
+| `/fs/linkkeys.bin` | Stored Bluetooth link keys for paired classic devices |
+| `/fs/le_linkkeys.bin` | Stored LE link keys for paired BLE devices |
+| `/fs/mc.bin` | Memory card save data (PlayStation, etc.) |
+
+## Config versions
+
+BlueRetro automatically migrates older config files when the format changes. The current format is **version 3**.
+
+| Magic constant | Version | Notes |
+|----------------|---------|-------|
+| `CONFIG_MAGIC_V0` (`0xA5A5A5A5`) | 0 | Original format |
+| `CONFIG_MAGIC_V1` (`0xF380D824`) | 1 | Added inquiry mode |
+| `CONFIG_MAGIC_V2` (`0x1782DB8A`) | 2 | Added bank select |
+| `CONFIG_MAGIC_V3` (`0xAB89C69A`) | 3 | Added combo mappings (current) |
+
+<Info>
+  If BlueRetro reads a config file with an unrecognized magic value, it resets to factory defaults and writes a fresh `config.bin`.
+</Info>
+
+## Config structure
+
+The configuration file is organized into three main sections.
+
+### Global settings (`global_cfg`)
+
+Applies to the entire adapter regardless of how many controllers are connected.
+
+| Field | Description |
+|-------|-------------|
+| `system_cfg` | Target wired system (auto-detect or a specific console) |
+| `multitap_cfg` | Multitap mode — see [Multitap configuration](/configuration/multitap) |
+| `inquiry_mode` | `INQ_AUTO` (auto-pair) or `INQ_MANUAL` (manual pairing only) |
+| `banksel` | Active config bank (0–3); `0xDB` selects the debug bank |
+
+### Output settings (`out_cfg`) — per port
+
+Controls how each wired controller port presents itself to the console.
+
+| Field | Values | Description |
+|-------|--------|-------------|
+| `dev_mode` | `DEV_PAD`, `DEV_PAD_ALT`, `DEV_KB`, `DEV_MOUSE` | Device type emulated on this port |
+| `acc_mode` | `ACC_NONE`, `ACC_MEM`, `ACC_RUMBLE`, `ACC_BOTH` | Accessory support (memory card, rumble, or both) |
+
+### Input settings (`in_cfg`) — per port
+
+Describes the Bluetooth controller assigned to each wired port and its button mapping table.
+
+| Field | Description |
+|-------|-------------|
+| `bt_dev_id` | Bluetooth device type ID (placeholder; not required for auto-pairing) |
+| `bt_subdev_id` | Bluetooth device subtype ID (e.g. Wii Classic, PS5 DualSense) |
+| `map_size` | Number of active mapping entries |
+| `map_cfg[]` | Array of up to `128` button mapping entries |
+
+## Config banks
+
+BlueRetro supports up to **4 independent config banks** (indices 0–3, set by `CONFIG_BANKSEL_MAX = 4`). Each bank stores a completely separate set of global, output, and input settings. This lets you switch between different controller layouts or console configurations without reconfiguring everything from scratch.
+
+A special debug bank (index `0xDB`) is also available for development and diagnostics.
+
+<Tip>
+  Use banks to keep separate profiles — for example, one bank for single-player with rumble enabled and another for four-player multitap.
+</Tip>
+
+## Config sources
+
+At boot, BlueRetro selects a config source based on the detected game ID:
+
+<CardGroup cols={2}>
+  <Card title="DEFAULT_CFG" icon="file">
+    The standard `/fs/config.bin`. Used when no game-specific override exists.
+  </Card>
+  <Card title="GAMEID_CFG" icon="gamepad-2">
+    A game-specific config file named after the detected game ID (e.g., `/fs/SLUS00001`). Takes priority over the default config when present.
+  </Card>
+</CardGroup>
+
+See [Game ID](/advanced/game-id) for details on how BlueRetro identifies the running game and applies per-game configs.

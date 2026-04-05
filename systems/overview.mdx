@@ -1,0 +1,97 @@
+---
+title: "Supported systems overview"
+description: "All wired console systems supported by BlueRetro, with system IDs and feature summary."
+keywords: ["BlueRetro", "supported systems", "wired systems", "retro consoles"]
+---
+
+BlueRetro maps Bluetooth controllers to the native wired protocols of retro game consoles. Each supported system has a numeric ID defined in the `wired system ID` enum in `adapter.h`. The system is selected either manually in the configuration or automatically via `WIRED_AUTO`.
+
+<CardGroup cols={2}>
+  <Card title="Nintendo systems" icon="gamepad-2" href="/systems/nintendo">
+    NES, SNES, N64, GameCube, Virtual Boy, and Wii extension
+  </Card>
+  <Card title="Sega systems" icon="gamepad-2" href="/systems/sega">
+    Genesis/Mega Drive, Saturn, and Dreamcast
+  </Card>
+  <Card title="PlayStation systems" icon="gamepad-2" href="/systems/playstation">
+    PlayStation 1 (PSX) and PlayStation 2 (PS2)
+  </Card>
+  <Card title="Other consoles" icon="gamepad-2" href="/systems/other-consoles">
+    PC Engine, PC-FX, 3DO, Jaguar, CD-i, JVS arcade, and parallel port systems
+  </Card>
+</CardGroup>
+
+## All supported systems
+
+The table below lists every system ID from the `adapter.h` enum, in the order they are defined.
+
+| System ID | Enum value | Description |
+|---|---|---|
+| `WIRED_AUTO` | 0 | Auto-detect the wired system at startup |
+| `PARALLEL_1P` | 1 | Parallel port — single player (push-pull) |
+| `PARALLEL_2P` | 2 | Parallel port — two player (push-pull) |
+| `NES` | 3 | Nintendo Entertainment System (NPISO protocol) |
+| `PCE` | 4 | PC Engine / TurboGrafx-16 |
+| `GENESIS` | 5 | Sega Genesis / Mega Drive (SEGA IO) |
+| `SNES` | 6 | Super Nintendo Entertainment System (NPISO/SPI) |
+| `CDI` | 7 | Philips CD-i |
+| `CD32` | 8 | Commodore Amiga CD32 |
+| `REAL_3DO` | 9 | 3DO Interactive Multiplayer |
+| `JAGUAR` | 10 | Atari Jaguar |
+| `PSX` | 11 | PlayStation 1 (SPI) |
+| `SATURN` | 12 | Sega Saturn (SEGA IO) |
+| `PCFX` | 13 | NEC PC-FX |
+| `JVS` | 14 | JVS arcade I/O |
+| `N64` | 15 | Nintendo 64 (NSI protocol) |
+| `DC` | 16 | Sega Dreamcast (Maple bus) |
+| `PS2` | 17 | PlayStation 2 (SPI) |
+| `GC` | 18 | Nintendo GameCube (NSI protocol) |
+| `WII_EXT` | 19 | Wii extension connector (I2C) |
+| `VBOY` | 20 | Nintendo Virtual Boy (NPISO protocol) |
+| `PARALLEL_1P_OD` | 21 | Parallel port — single player (open-drain) |
+| `PARALLEL_2P_OD` | 22 | Parallel port — two player (open-drain) |
+| `SEA_BOARD` | 23 | SEA board (GBA HD / Supergun) |
+
+<Note>
+`WIRED_AUTO` (value 0) instructs BlueRetro to probe the connected hardware and select the appropriate system driver automatically. Manual selection is recommended when auto-detection is ambiguous.
+</Note>
+
+## Hardware configurations
+
+Both HW1 and HW2 variants of BlueRetro support the same set of systems. Configurations are stored under `configs/hw1/` and `configs/hw2/`:
+
+`3do`, `cdi`, `dreamcast`, `gamecube`, `gbahd`, `genesis`, `jaguar`, `jvs_arcade`, `n64`, `nes`, `parallel_1p`, `parallel_1p_3v3`, `parallel_2p`, `parallel_2p_3v3`, `pc_engine`, `pcfx`, `playstation`, `saturn`, `snes`, `universal`, `virtualboy`, `wii_extension`
+
+## Multitap modes
+
+Multitap expansion is controlled by the `multitap_cfg` field in `global_cfg`. The available modes are defined in `adapter.h`:
+
+| Mode | Description |
+|---|---|
+| `MT_NONE` | No multitap; standard 1–2 player mode |
+| `MT_SLOT_1` | Multitap connected in port 1 |
+| `MT_SLOT_2` | Multitap connected in port 2 |
+| `MT_DUAL` | Multitap connected in both ports |
+| `MT_ALT` | Alternate multitap protocol (e.g., EA 4-Way Play for Genesis) |
+
+## Accessory modes
+
+Each output port's `acc_mode` field controls which peripheral is emulated in the controller pak slot:
+
+| Mode | Description |
+|---|---|
+| `ACC_NONE` | No accessory |
+| `ACC_MEM` | Memory card / controller pak |
+| `ACC_RUMBLE` | Rumble pak |
+| `ACC_BOTH` | Both memory and rumble (where supported) |
+
+## Device modes
+
+Each output port's `dev_mode` controls the type of input device presented to the console:
+
+| Mode | Description |
+|---|---|
+| `DEV_PAD` | Standard gamepad |
+| `DEV_PAD_ALT` | Alternate gamepad layout (e.g., 6-button, 3D pad) |
+| `DEV_KB` | Keyboard |
+| `DEV_MOUSE` | Mouse |

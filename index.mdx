@@ -1,97 +1,62 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "BlueRetro"
+description: "Multiplayer Bluetooth controller adapter for retro game consoles — use modern wireless controllers on your classic hardware."
 ---
 
-## Setting up
+BlueRetro is open-source firmware for the ESP32 that lets you use modern Bluetooth controllers — PS3, PS4, PS5, Xbox One, Xbox Series X|S, Nintendo Switch, Wii, and generic HID devices — on retro game consoles and computers. A single adapter supports up to 4+ simultaneous players.
 
-Get your documentation site up and running in minutes.
-
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Quick start" icon="rocket" href="/quickstart">
+    Flash firmware and connect your first Bluetooth controller in minutes.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Hardware guide" icon="microchip" href="/hardware">
+    Choose the right ESP32 board and wiring for your console.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Supported systems" icon="gamepad" href="/systems/overview">
+    NES, SNES, N64, GameCube, PlayStation, Saturn, Dreamcast, and more.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Configuration" icon="sliders" href="/configuration/web-config">
+    Remap buttons, adjust axes, and manage per-game profiles.
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## What BlueRetro supports
 
-Everything you need to create world-class documentation.
+<CardGroup cols={3}>
+  <Card title="Nintendo" icon="star" href="/systems/nintendo">
+    NES, SNES, N64, GameCube, Wii extension, Virtual Boy
+  </Card>
+  <Card title="Sega" icon="star" href="/systems/sega">
+    Mega Drive/Genesis, Saturn, Dreamcast
+  </Card>
+  <Card title="PlayStation" icon="star" href="/systems/playstation">
+    PS1, PS2
+  </Card>
+  <Card title="PC Engine" icon="star" href="/systems/other-consoles">
+    PC Engine / TurboGrafx-16, PC-FX
+  </Card>
+  <Card title="Other consoles" icon="star" href="/systems/other-consoles">
+    3DO, Atari Jaguar, CD-i, JVS arcade, and parallel port systems
+  </Card>
+  <Card title="Bluetooth controllers" icon="bluetooth" href="/controllers/overview">
+    PS3–PS5, Xbox One/Series, Switch, Wii, and generic HID devices
+  </Card>
+</CardGroup>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+## Get started in three steps
 
-## Need inspiration?
+<Steps>
+  <Step title="Get the hardware">
+    Pick up an ESP32 development board (ESP32-DevKitC recommended) and wire it to your console's controller port. See the [hardware guide](/hardware) for pinouts.
+  </Step>
+  <Step title="Flash the firmware">
+    Download the latest BlueRetro firmware release and flash it to your ESP32 using the web flasher or the `flash_blueretro.py` script. See the [quick start guide](/quickstart).
+  </Step>
+  <Step title="Pair your controller and play">
+    Put your Bluetooth controller in pairing mode. BlueRetro discovers it automatically. Open the web config interface to customize button mapping and settings.
+  </Step>
+</Steps>
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<Note>
+  BlueRetro is open-source hardware and firmware released under the CERN-OHL-P-2.0 and Apache-2.0 licenses. Community-made PCBs and pre-built adapters are available from makers like [Laser Bear Industries](https://www.laserbear.net), [Humble Bazooka](https://www.humblebazooka.com), [RetroOnyx](https://www.retroonyx.com/), and [RetroTime](https://8bitmods.com/retrotime).
+</Note>

@@ -1,0 +1,174 @@
+---
+title: "Button mapping"
+description: "Remap any button or axis from a Bluetooth controller to any output on the wired console port, with turbo, scaling, and deadzone control per mapping."
+keywords: ["button mapping", "remap", "turbo", "deadzone", "gamepad"]
+---
+
+BlueRetro's button mapping system translates inputs from a Bluetooth controller into outputs understood by the wired console. Each wired port holds up to **128 mapping entries** (`ADAPTER_MAPPING_MAX = 128`).
+
+## Mapping entry structure
+
+Every entry in the `map_cfg` array describes a single source-to-destination translation.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `src_btn` | `uint8_t` | Source button or axis ID from the Bluetooth controller |
+| `dst_btn` | `uint8_t` | Destination button or axis ID for the wired console |
+| `dst_id` | `uint8_t` | Destination device (wired port index) |
+| `perc_max` | `uint8_t` | Maximum output as a percentage (default: `100`) |
+| `perc_threshold` | `uint8_t` | Threshold percentage for digital triggers (default: `50`) |
+| `perc_deadzone` | `uint8_t` | Deadzone size as a raw scaled value (default: `135`; values above 100 are used for large inner deadzones) |
+| `turbo` | `uint8_t` | Turbo mode — `0` = off, non-zero = turbo rate |
+| `algo` | `uint8_t` | Scaling algorithm to apply |
+
+<Note>
+  The default combo mappings added at config initialization use `perc_max = 100`, `perc_threshold = 50`, and `perc_deadzone = 135`.
+</Note>
+
+## Source buttons (PAD inputs)
+
+These IDs represent inputs from a standard Bluetooth gamepad (`PAD_*`).
+
+| ID | Name | Description |
+|----|------|-------------|
+| `0` | `PAD_LX_LEFT` | Left stick, left direction |
+| `1` | `PAD_LX_RIGHT` | Left stick, right direction |
+| `2` | `PAD_LY_DOWN` | Left stick, down direction |
+| `3` | `PAD_LY_UP` | Left stick, up direction |
+| `4` | `PAD_RX_LEFT` | Right stick, left direction |
+| `5` | `PAD_RX_RIGHT` | Right stick, right direction |
+| `6` | `PAD_RY_DOWN` | Right stick, down direction |
+| `7` | `PAD_RY_UP` | Right stick, up direction |
+| `8` | `PAD_LD_LEFT` | Left D-pad, left |
+| `9` | `PAD_LD_RIGHT` | Left D-pad, right |
+| `10` | `PAD_LD_DOWN` | Left D-pad, down |
+| `11` | `PAD_LD_UP` | Left D-pad, up |
+| `12` | `PAD_RD_LEFT` | Right D-pad, left |
+| `13` | `PAD_RD_RIGHT` | Right D-pad, right |
+| `14` | `PAD_RD_DOWN` | Right D-pad, down |
+| `15` | `PAD_RD_UP` | Right D-pad, up |
+| `16` | `PAD_RB_LEFT` | Right face buttons, left (e.g. Square/X) |
+| `17` | `PAD_RB_RIGHT` | Right face buttons, right (e.g. Circle/B) |
+| `18` | `PAD_RB_DOWN` | Right face buttons, down (e.g. Cross/A) |
+| `19` | `PAD_RB_UP` | Right face buttons, up (e.g. Triangle/Y) |
+| `20` | `PAD_MM` | Middle/Menu button |
+| `21` | `PAD_MS` | Share/Screenshot button |
+| `22` | `PAD_MT` | Touchpad/third menu button |
+| `23` | `PAD_MQ` | Fourth menu button |
+| `24` | `PAD_LM` | Left shoulder button (L1/LB) |
+| `25` | `PAD_LS` | Left trigger as digital (L2/LT) |
+| `26` | `PAD_LT` | Left analog trigger |
+| `27` | `PAD_LJ` | Left stick click (L3/LSB) |
+| `28` | `PAD_RM` | Right shoulder button (R1/RB) |
+| `29` | `PAD_RS` | Right trigger as digital (R2/RT) |
+| `30` | `PAD_RT` | Right analog trigger |
+| `31` | `PAD_RJ` | Right stick click (R3/RSB) |
+
+## Source buttons (keyboard and mouse inputs)
+
+When a keyboard or mouse is used as a source, the `KBM_*` enum provides the input IDs. The first entries are staged to serve as useful joystick defaults.
+
+<AccordionGroup>
+  <Accordion title="Mouse and primary movement keys">
+
+| ID | Name | Description |
+|----|------|-------------|
+| `0` | `KB_A` | A key (maps to left) |
+| `1` | `KB_D` | D key (maps to right) |
+| `2` | `KB_S` | S key (maps to down) |
+| `3` | `KB_W` | W key (maps to up) |
+| `4` | `MOUSE_X_LEFT` | Mouse move left |
+| `5` | `MOUSE_X_RIGHT` | Mouse move right |
+| `6` | `MOUSE_Y_DOWN` | Mouse move down |
+| `7` | `MOUSE_Y_UP` | Mouse move up |
+| `8` | `KB_LEFT` | Left arrow |
+| `9` | `KB_RIGHT` | Right arrow |
+| `10` | `KB_DOWN` | Down arrow |
+| `11` | `KB_UP` | Up arrow |
+| `12` | `MOUSE_WX_LEFT` | Mouse wheel left |
+| `13` | `MOUSE_WX_RIGHT` | Mouse wheel right |
+| `14` | `MOUSE_WY_DOWN` | Mouse wheel down |
+| `15` | `MOUSE_WY_UP` | Mouse wheel up |
+| `24` | `MOUSE_RIGHT` | Right mouse button |
+| `27` | `MOUSE_MIDDLE` | Middle mouse button |
+| `28` | `MOUSE_LEFT` | Left mouse button |
+
+  </Accordion>
+  <Accordion title="Action and function keys">
+
+| ID | Name |
+|----|------|
+| `16` | `KB_Q` / `MOUSE_4` |
+| `17` | `KB_R` / `MOUSE_5` |
+| `18` | `KB_E` / `MOUSE_6` |
+| `19` | `KB_F` / `MOUSE_7` |
+| `20` | `KB_ESC` |
+| `21` | `KB_ENTER` |
+| `22` | `KB_LWIN` |
+| `23` | `KB_HASH` |
+| `25` | `KB_Z` |
+| `26` | `KB_LCTRL` |
+| `29` | `KB_X` / `MOUSE_8` |
+| `30` | `KB_LSHIFT` |
+| `31` | `KB_SPACE` |
+
+  </Accordion>
+  <Accordion title="Full keyboard range">
+
+Remaining keys follow the same pattern: `KB_B`, `KB_C`, `KB_G` through `KB_Y`, digits `KB_0`–`KB_9`, `KB_BACKSPACE`, `KB_TAB`, `KB_MINUS`, `KB_EQUAL`, `KB_LEFTBRACE`, `KB_RIGHTBRACE`, `KB_BACKSLASH`, `KB_SEMICOLON`, `KB_APOSTROPHE`, `KB_GRAVE`, `KB_COMMA`, `KB_DOT`, `KB_SLASH`, `KB_CAPSLOCK`, function keys `KB_F1`–`KB_F12`, navigation keys (`KB_INSERT`, `KB_HOME`, `KB_PAGEUP`, `KB_DEL`, `KB_END`, `KB_PAGEDOWN`), and the full numpad (`KB_KP_DIV` through `KB_KP_DOT`). Modifier keys `KB_LALT`, `KB_RCTRL`, `KB_RSHIFT`, `KB_RALT`, `KB_RWIN` close the range.
+
+  </Accordion>
+</AccordionGroup>
+
+## Device modes
+
+The `dev_mode` field in `out_cfg` controls what kind of device each wired port emulates. This affects which destination button IDs are valid for that port.
+
+| Value | Constant | Description |
+|-------|----------|-------------|
+| `0` | `DEV_PAD` | Standard gamepad — default for all ports |
+| `1` | `DEV_PAD_ALT` | Alternate gamepad layout (console-specific; e.g. 6-button Genesis pad) |
+| `2` | `DEV_KB` | Keyboard emulation |
+| `3` | `DEV_MOUSE` | Mouse emulation |
+
+## Turbo mode
+
+Setting a non-zero value in the `turbo` field of a mapping entry enables turbo (auto-fire) for that button. The value controls the rate: higher values produce faster oscillation. Turbo works for both digital buttons and analog axes mapped to digital outputs.
+
+## Mapping quirks
+
+BlueRetro automatically adjusts mappings for certain controllers to correct known hardware or firmware differences. These are applied transparently via BT flags and do not require manual configuration.
+
+<AccordionGroup>
+  <Accordion title="Face button quirks">
+
+| Flag | Applies to | Effect |
+|------|-----------|--------|
+| `BT_QUIRK_FACE_BTNS_INVERT` | Some generic HID pads | Inverts the face button order |
+| `BT_QUIRK_FACE_BTNS_ROTATE_RIGHT` | Some controllers | Rotates face buttons 90° clockwise |
+| `BT_QUIRK_FACE_BTNS_TRIGGER_TO_6BUTTONS` | 6-button layouts | Remaps triggers to face buttons |
+| `BT_QUIRK_FACE_BTNS_TRIGGER_TO_8BUTTONS` | 8-button layouts | Remaps triggers to face buttons |
+| `BT_QUIRK_TRIGGER_PRI_SEC_INVERT` | Some controllers | Swaps primary and secondary trigger roles |
+
+  </Accordion>
+  <Accordion title="Controller-specific quirks">
+
+| Flag | Applies to |
+|------|-----------|
+| `BT_QUIRK_8BITDO_N64` | 8BitDo N64 controller |
+| `BT_QUIRK_8BITDO_N64_MK` | 8BitDo N64 ModKit |
+| `BT_QUIRK_8BITDO_M30` | 8BitDo M30 (Genesis layout) |
+| `BT_QUIRK_8BITDO_M30_MODKIT` | 8BitDo M30 ModKit |
+| `BT_QUIRK_8BITDO_SATURN` | 8BitDo Saturn controller |
+| `BT_QUIRK_8BITDO_GC` | 8BitDo GameCube controller |
+| `BT_QUIRK_8BITDO_GBROS` | 8BitDo GB Bros adapter |
+| `BT_QUIRK_BLUEN64_N64` | BlueN64 N64 controller |
+| `BT_QUIRK_RF_WARRIOR` | RF Warrior controller |
+| `BT_QUIRK_OUYA` | OUYA controller |
+
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+  Changing `dev_mode` on a port requires a wired interface reset before the new mode takes effect. BlueRetro detects this automatically and resets the wired core when needed.
+</Warning>

@@ -1,0 +1,74 @@
+---
+title: "Bluetooth controllers overview"
+description: "BlueRetro supports up to 7 simultaneous Bluetooth controllers — PS3, PS4, PS5, Xbox, Nintendo Switch, Wii, and generic HID devices."
+---
+
+BlueRetro supports up to **7 simultaneous Bluetooth devices** (`BT_MAX_DEV = 7`) over both BR/EDR (Classic Bluetooth) and BLE (Bluetooth Low Energy). Each connected controller is translated into the appropriate wired protocol for the target retro console.
+
+## Supported Bluetooth protocols
+
+| Protocol | Description |
+|----------|-------------|
+| **BR/EDR** | Classic Bluetooth, used by PS3, PS4, Wii, Switch Pro, and most traditional gamepads |
+| **BLE** | Bluetooth Low Energy, used by PS5 DualSense (native), Xbox Series X\|S, and some generic HID devices |
+
+## Device type categories
+
+BlueRetro identifies each connected device using an internal type enum. The following device types are supported:
+
+<AccordionGroup>
+  <Accordion title="BT_HID_GENERIC — Generic HID over Bluetooth">
+    Any Bluetooth device that presents itself as a standard Human Interface Device (HID) descriptor. This covers both BR/EDR and BLE HID profiles, including most Xbox controllers, Google Stadia, Atari VCS, Flydigi, Xiaomi gamepads, and HID keyboards.
+  </Accordion>
+  <Accordion title="BT_PS3 — PlayStation 3 DualShock 3">
+    The PS3 DualShock 3 uses a proprietary Bluetooth protocol that differs from standard HID. BlueRetro handles its unique connection and report format with a dedicated driver.
+  </Accordion>
+  <Accordion title="BT_WII — Wii Remote and extensions">
+    Wii Remotes (Wiimotes) and their attached extensions connect via Classic Bluetooth with a Nintendo-specific HID profile. Extension subtypes are detected automatically at runtime.
+  </Accordion>
+  <Accordion title="BT_PS — PlayStation 4 / PlayStation 5">
+    DualShock 4 (PS4) and DualSense (PS5) controllers. Both use Bluetooth with Sony-specific HID reports. The PS5 DualSense subtype is identified by device name.
+  </Accordion>
+  <Accordion title="BT_SW — Nintendo Switch controllers">
+    Nintendo Switch Pro Controller, Joy-Con (Left and Right), and Nintendo Switch Online (NSO) retro controllers. Each variant is identified as a subtype.
+  </Accordion>
+  <Accordion title="BT_SW2 — Nintendo Switch 2 controllers">
+    Nintendo Switch 2 controllers, handled by a dedicated driver introduced alongside Switch 2 hardware support.
+  </Accordion>
+</AccordionGroup>
+
+## Device subtypes
+
+Several device types carry subtypes that distinguish specific hardware variants. BlueRetro detects these automatically based on the device name or HID descriptor.
+
+| Subtype | Parent type | Description |
+|---------|-------------|-------------|
+| `BT_WII_NUNCHUCK` | BT_WII | Wii Nunchuck attached to Wiimote |
+| `BT_WII_CLASSIC` | BT_WII | Wii Classic Controller |
+| `BT_WII_CLASSIC_8BIT` | BT_WII | Wii Classic Controller (8-bit variant) |
+| `BT_WII_CLASSIC_PRO` | BT_WII | Wii Classic Controller Pro |
+| `BT_WII_CLASSIC_PRO_8BIT` | BT_WII | Wii Classic Controller Pro (8-bit variant) |
+| `BT_WIIU_PRO` | BT_WII | Wii U Pro Controller |
+| `BT_PS5_DS` | BT_PS | PlayStation 5 DualSense |
+| `BT_SW_LEFT_JOYCON` | BT_SW | Switch Left Joy-Con |
+| `BT_SW_RIGHT_JOYCON` | BT_SW | Switch Right Joy-Con |
+| `BT_SW_NES` | BT_SW | Switch NSO NES controller |
+| `BT_SW_SNES` | BT_SW | Switch NSO SNES controller |
+| `BT_SW_N64` | BT_SW | Switch NSO N64 controller |
+| `BT_SW_MD_GEN` | BT_SW | Switch NSO Mega Drive / Genesis controller |
+| `BT_SW_HYPERKIN_ADMIRAL` | BT_SW | Hyperkin Admiral N64 controller |
+
+<Note>
+  The `_8BIT` variants (`BT_WII_CLASSIC_8BIT`, `BT_WII_CLASSIC_PRO_8BIT`) are detected by the extension connector ID bytes rather than by device name, and use an 8-bit button data format instead of the standard 16-bit format.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Pairing controllers" icon="bluetooth" href="/controllers/pairing">
+    Learn how to put each controller type in pairing mode and connect it to BlueRetro.
+  </Card>
+  <Card title="Supported devices" icon="list" href="/controllers/supported-devices">
+    See the full list of explicitly tested and supported Bluetooth controllers.
+  </Card>
+</CardGroup>

@@ -1,0 +1,102 @@
+---
+title: Introduction
+description: BlueRetro is an open-source Bluetooth controller adapter for retro game consoles and computers, built on the ESP32 microcontroller.
+---
+
+## What is BlueRetro?
+
+BlueRetro is a multiplayer Bluetooth controller adapter for retro game consoles and computers. Lost or broken controllers? Reproductions too expensive? Need a rare accessory? BlueRetro lets you use the modern Bluetooth devices you already own with classic hardware.
+
+The project is open-source hardware and firmware, licensed under [CERN-OHL-P-2.0](https://cern.ch/cern-ohl) (hardware) and [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0) (firmware). It is built around the popular ESP32 chip and supports simultaneous 4+ players using a single adapter.
+
+<Note>
+  This repository is archived and no longer under active development. The code remains available for reference, learning, and community use. You are free to fork the repository in accordance with the license.
+</Note>
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="Multiplayer support" icon="users">
+    Connect up to 4 or more Bluetooth controllers simultaneously with a single adapter — no multitap hardware required for most systems.
+  </Card>
+  <Card title="Broad controller compatibility" icon="gamepad">
+    Works with PS3, PS4, PS5, Xbox One, Xbox Series X|S, Nintendo Switch, Wii, and generic HID Bluetooth (BR/EDR and LE) devices.
+  </Card>
+  <Card title="Wide system support" icon="microchip">
+    Covers over 20 wired systems — from 1980s 8-bit machines to 6th-generation consoles and arcade hardware.
+  </Card>
+  <Card title="Web configuration interface" icon="globe">
+    Configure button mappings, axis calibration, multitap mode, and more through a browser-based UI served directly from the adapter.
+  </Card>
+  <Card title="Open-source hardware and firmware" icon="code">
+    Both the hardware design (CERN-OHL-P-2.0) and the firmware (Apache-2.0) are fully open source and forkable.
+  </Card>
+  <Card title="OTA firmware updates" icon="arrow-up-from-bracket">
+    Supports over-the-air firmware updates via the web configuration interface — no cable required after initial flash.
+  </Card>
+</CardGroup>
+
+## Supported Bluetooth devices
+
+BlueRetro supports the following Bluetooth controller families:
+
+| Device | Protocol |
+|---|---|
+| Sony PS3 (DualShock 3) | Bluetooth BR/EDR |
+| Sony PS4 (DualShock 4) | Bluetooth BR/EDR |
+| Sony PS5 (DualSense) | Bluetooth BR/EDR |
+| Microsoft Xbox One | Bluetooth BR/EDR |
+| Microsoft Xbox Series X\|S | Bluetooth LE |
+| Nintendo Switch Pro Controller | Bluetooth BR/EDR |
+| Nintendo Switch Joy-Con (L/R) | Bluetooth BR/EDR |
+| Nintendo Switch Online controllers (NES, SNES, N64, Genesis) | Bluetooth BR/EDR |
+| Nintendo Wii Remote + Nunchuck | Bluetooth BR/EDR |
+| Nintendo Wii Classic Controller / Pro | Bluetooth BR/EDR |
+| Nintendo Wii U Pro Controller | Bluetooth BR/EDR |
+| Generic HID (keyboards, mice, gamepads) | Bluetooth BR/EDR & LE |
+
+## Supported wired systems
+
+BlueRetro supports the following wired output systems. Each has dedicated wiring configurations for HW1 (external/breadboard) and HW2 (internal PCB) form factors.
+
+| System ID | Console / Platform |
+|---|---|
+| `WIRED_AUTO` | Auto-detect the system at startup |
+| `PARALLEL_1P` | Single-player parallel port — NeoGeo, Supergun, JAMMA, handhelds, computers |
+| `PARALLEL_2P` | Two-player parallel port — Atari 2600/7800, Master System, computers |
+| `NES` | Nintendo Entertainment System |
+| `PCE` | PC Engine / TurboGrafx-16 |
+| `GENESIS` | Sega Mega Drive / Genesis |
+| `SNES` | Super Nintendo Entertainment System |
+| `CDI` | Philips CD-i |
+| `CD32` | Commodore Amiga CD32 |
+| `REAL_3DO` | 3DO Interactive Multiplayer |
+| `JAGUAR` | Atari Jaguar |
+| `PSX` | Sony PlayStation 1 |
+| `SATURN` | Sega Saturn |
+| `PCFX` | NEC PC-FX |
+| `JVS` | JVS Arcade |
+| `N64` | Nintendo 64 |
+| `DC` | Sega Dreamcast |
+| `PS2` | Sony PlayStation 2 |
+| `GC` | Nintendo GameCube |
+| `WII_EXT` | Wii Extension port |
+| `VBOY` | Nintendo Virtual Boy |
+| `PARALLEL_1P_OD` | Single-player parallel port (open-drain) |
+| `PARALLEL_2P_OD` | Two-player parallel port (open-drain) |
+| `SEA_BOARD` | SEA board — GBA HD / Supergun OSD |
+
+## Licenses
+
+| Component | License |
+|---|---|
+| Firmware (software) | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0) |
+| Hardware design files | [CERN-OHL-P-2.0](https://ohwr.org/cern_ohl_p_v2.txt) |
+
+## Further reading
+
+The project's full documentation — including detailed wiring pinouts, button mapping reference, and build guides — is maintained on the GitHub wiki.
+
+<Card title="BlueRetro GitHub wiki" icon="book" href="https://github.com/darthcloud/BlueRetro/wiki">
+  The complete reference for wiring, configuration, supported devices, and community builds.
+</Card>

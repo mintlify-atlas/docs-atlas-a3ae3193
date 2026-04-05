@@ -1,0 +1,99 @@
+---
+title: "PlayStation systems"
+description: "BlueRetro support for PlayStation 1 (PSX) and PlayStation 2 (PS2), including DualShock, memory card emulation, keyboard, and mouse modes."
+keywords: ["PlayStation", "PSX", "PS1", "PS2", "DualShock", "BlueRetro", "memory card"]
+---
+
+BlueRetro supports both PlayStation 1 and PlayStation 2 through a shared SPI-based protocol driver (`ps.c`). PS2 uses the same `ps_from_generic` function as PSX, with the console selecting the operating mode automatically.
+
+---
+
+## PlayStation 1 (PSX)
+
+| Property | Value |
+|---|---|
+| System ID | `PSX` (11) |
+| Protocol | SPI (PlayStation serial) |
+| Driver | `ps.c` / `ps_from_generic` |
+| Max players | 2 (up to 8 with multitap) |
+| Multitap modes | `MT_SLOT_1`, `MT_SLOT_2`, `MT_DUAL` |
+| Accessory support | `ACC_MEM`, `ACC_RUMBLE`, `ACC_BOTH` |
+
+---
+
+## PlayStation 2 (PS2)
+
+| Property | Value |
+|---|---|
+| System ID | `PS2` (17) |
+| Protocol | SPI (PlayStation serial, PS2-extended) |
+| Driver | `ps.c` / `ps_from_generic` |
+| Max players | 2 (up to 8 with multitap) |
+| Multitap modes | `MT_SLOT_1`, `MT_SLOT_2`, `MT_DUAL` |
+| Accessory support | `ACC_MEM`, `ACC_RUMBLE`, `ACC_BOTH` |
+
+<Note>
+PSX and PS2 use the same firmware driver. The PS2 console negotiates extended features (pressure-sensitive buttons, additional axes) over the same SPI bus. BlueRetro responds correctly to PS2 mode negotiations.
+</Note>
+
+---
+
+## Controller layout
+
+The PlayStation adapter exposes the full DualShock layout:
+
+- **Buttons**: Cross (X), Circle (C), Square (S), Triangle (T), L1, L2, R1, R2, L3, R3, Start, Select
+- **Axes**: Left stick (LX, LY), Right stick (RX, RY) — 4 axes in standard mode
+- **Pressure axes**: L2, R2, and all face/shoulder buttons expose analog pressure values in PS2 mode (16 total axes via `ADAPTER_PS2_MAX_AXES`)
+
+The analog button toggle is mapped to the `PAD_MT` generic button, which sets or clears the `analog_btn` field in the output buffer.
+
+---
+
+## Device modes
+
+<Tabs>
+  <Tab title="DEV_PAD (default)">
+    Standard DualShock gamepad with digital and analog inputs. Pressure-sensitive axis values are output for PS2 in addition to button bits.
+  </Tab>
+  <Tab title="DEV_MOUSE">
+    Emulates the PlayStation Mouse. Two relative movement axes (X, Y) and left/right buttons (L1, R1) are reported. Uses the `ps_mouse_map` output format.
+  </Tab>
+  <Tab title="DEV_KB">
+    Emulates the PlayStation Keyboard (e.g., used with PlayStation BASIC). Key events are sent as make/break scancode pairs over the SPI bus via the keyboard monitor (`kbmon`).
+  </Tab>
+</Tabs>
+
+---
+
+## Memory card emulation
+
+When `acc_mode` is set to `ACC_MEM` or `ACC_BOTH`, BlueRetro emulates a PlayStation memory card. Save data is stored in the ESP32's flash and is accessible to the console as a standard 128 KB memory card.
+
+<Warning>
+Memory card save data is stored in ESP32 flash. Avoid power-cycling the adapter immediately after a save operation to prevent corruption.
+</Warning>
+
+---
+
+## DualShock rumble
+
+When `acc_mode` includes `ACC_RUMBLE`, BlueRetro forwards rumble commands from the console to the connected Bluetooth controller. The PlayStation rumble protocol sends separate small motor (high-frequency) and large motor (low-frequency) power values, which are mapped to `hf_pwr` and `lf_pwr` in the generic feedback structure.
+
+The feedback path is handled by `ps_fb_to_generic`. A status LED feedback type (`FB_TYPE_STATUS_LED`) is also supported.
+
+---
+
+## Multitap
+
+<Tabs>
+  <Tab title="MT_SLOT_1">
+    Multitap adapter in port 1. Controllers at wired indices 0–3 are multiplexed through the multitap.
+  </Tab>
+  <Tab title="MT_SLOT_2">
+    Multitap adapter in port 2. Controllers at wired indices 4–7 are multiplexed through the multitap.
+  </Tab>
+  <Tab title="MT_DUAL">
+    Multitap adapters in both ports. Supports up to 8 players total across both multitaps.
+  </Tab>
+</Tabs>

@@ -1,0 +1,108 @@
+---
+title: "Supported Bluetooth devices"
+description: "Full list of Bluetooth controllers explicitly tested and supported by BlueRetro, organized by manufacturer."
+---
+
+BlueRetro is explicitly tested against the controllers listed below. Because BlueRetro also implements a full generic HID stack, **any Bluetooth BR/EDR or BLE device that presents a standard HID descriptor should work**, even if not listed here.
+
+<Tabs>
+  <Tab title="Sony PlayStation">
+    | Controller | BlueRetro type | Notes |
+    |------------|---------------|-------|
+    | PS3 DualShock 3 | `BT_PS3` | Requires USB cable for first-time pairing |
+    | PS4 DualShock 4 | `BT_PS` | Hold Share + PS to pair |
+    | PS5 DualSense | `BT_PS` / `BT_PS5_DS` | Hold Create + PS to pair |
+    | PS5 DualSense (new hardware revision) | `BT_PS` / `BT_PS5_DS` | Same pairing procedure |
+  </Tab>
+  <Tab title="Nintendo Switch">
+    | Controller | BlueRetro subtype | Notes |
+    |------------|-------------------|-------|
+    | Switch Pro Controller | `BT_SW` | Hold pairing button on top edge |
+    | Switch Left Joy-Con | `BT_SW_LEFT_JOYCON` | Each Joy-Con occupies one BT slot |
+    | Switch Right Joy-Con | `BT_SW_RIGHT_JOYCON` | Each Joy-Con occupies one BT slot |
+    | Switch NSO NES Controller | `BT_SW_NES` | Nintendo Switch Online |
+    | Switch NSO SNES Controller | `BT_SW_SNES` | Nintendo Switch Online |
+    | Switch NSO N64 Controller | `BT_SW_N64` | Nintendo Switch Online |
+    | Switch NSO Mega Drive / Genesis Controller | `BT_SW_MD_GEN` | Nintendo Switch Online |
+    | Hyperkin Admiral N64 Controller | `BT_SW_HYPERKIN_ADMIRAL` | Third-party Switch-protocol controller |
+    | Retro-Bit Brawler64 | `BT_SW` | Switch-protocol N64-style controller |
+    | PowerA GameCube Controller | `BT_SW` | Switch-protocol GameCube-style controller |
+  </Tab>
+  <Tab title="Nintendo Wii / Wii U">
+    | Controller | BlueRetro subtype | Notes |
+    |------------|-------------------|-------|
+    | Wii Remote (Wiimote) | `BT_WII` | Press 1+2 or red sync button to pair |
+    | Wii Nunchuck | `BT_WII_NUNCHUCK` | Attach to Wiimote; detected automatically |
+    | Wii Classic Controller | `BT_WII_CLASSIC` | Attach to Wiimote; detected automatically |
+    | Wii Classic Controller Pro | `BT_WII_CLASSIC_PRO` | Attach to Wiimote; detected automatically |
+    | Wii U Pro Controller | `BT_WIIU_PRO` | Pairs directly, no Wiimote required |
+  </Tab>
+  <Tab title="Xbox / Microsoft">
+    | Controller | BlueRetro type | Notes |
+    |------------|---------------|-------|
+    | Xbox Series X\|S (BLE) | `BT_HID_GENERIC` | Hold Bind button 3 seconds to pair |
+    | Xbox One S (BLE) | `BT_HID_GENERIC` | Hold Bind button 3 seconds to pair |
+  </Tab>
+  <Tab title="Atari">
+    | Controller | BlueRetro type | Notes |
+    |------------|---------------|-------|
+    | Atari VCS Classic Joystick | `BT_HID_GENERIC` | Original-style joystick for Atari VCS |
+    | Atari VCS Modern Controller | `BT_HID_GENERIC` | Full gamepad for Atari VCS |
+  </Tab>
+  <Tab title="Google">
+    | Controller | BlueRetro type | Notes |
+    |------------|---------------|-------|
+    | Google Stadia Controller | `BT_HID_GENERIC` | BLE HID mode |
+  </Tab>
+  <Tab title="Other manufacturers">
+    | Controller | BlueRetro type | Notes |
+    |------------|---------------|-------|
+    | Flydigi Apex 3 | `BT_HID_GENERIC` | Generic HID gamepad |
+    | Xiaomi Mi Gamepad | `BT_HID_GENERIC` | Generic HID gamepad |
+    | Generic HID controller (profile A) | `BT_HID_GENERIC` | Standard HID descriptor profile |
+    | Generic HID controller (profile B) | `BT_HID_GENERIC` | Standard HID descriptor profile |
+    | HID keyboard | `BT_HID_GENERIC` | Any standard Bluetooth keyboard |
+  </Tab>
+</Tabs>
+
+## Controller quirks
+
+Some controllers require special handling to correct button layout differences or non-standard report formats. BlueRetro applies these quirks automatically based on the device name or VID/PID.
+
+<AccordionGroup>
+  <Accordion title="8BitDo controllers">
+    Several 8BitDo controllers are identified by quirk flags and receive adjusted button mappings:
+
+    | Quirk flag | Controller |
+    |------------|------------|
+    | `BT_QUIRK_8BITDO_N64` | 8BitDo N64 controller |
+    | `BT_QUIRK_8BITDO_N64_MK` | 8BitDo N64 Modkit |
+    | `BT_QUIRK_8BITDO_M30` | 8BitDo M30 controller |
+    | `BT_QUIRK_8BITDO_M30_MODKIT` | 8BitDo M30 Modkit |
+    | `BT_QUIRK_8BITDO_SATURN` | 8BitDo Saturn controller |
+    | `BT_QUIRK_8BITDO_GC` | 8BitDo GameCube controller |
+    | `BT_QUIRK_8BITDO_GBROS` | 8BitDo GBros. adapter |
+  </Accordion>
+  <Accordion title="Other third-party controllers">
+    | Quirk flag | Controller |
+    |------------|------------|
+    | `BT_QUIRK_BLUEN64_N64` | BlueN64 N64 controller |
+    | `BT_QUIRK_RF_WARRIOR` | RF Warrior controller |
+    | `BT_QUIRK_OUYA` | OUYA controller |
+  </Accordion>
+  <Accordion title="Generic face button quirks">
+    Some controllers report face buttons in a non-standard orientation. BlueRetro corrects for these automatically:
+
+    | Quirk flag | Effect |
+    |------------|--------|
+    | `BT_QUIRK_FACE_BTNS_INVERT` | Inverts face button polarity |
+    | `BT_QUIRK_FACE_BTNS_ROTATE_RIGHT` | Rotates face button layout clockwise |
+    | `BT_QUIRK_FACE_BTNS_TRIGGER_TO_6BUTTONS` | Maps triggers to a 6-button layout |
+    | `BT_QUIRK_FACE_BTNS_TRIGGER_TO_8BUTTONS` | Maps triggers to an 8-button layout |
+    | `BT_QUIRK_TRIGGER_PRI_SEC_INVERT` | Swaps primary and secondary trigger assignments |
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+  If your Bluetooth controller is not listed but presents a standard HID descriptor, connect it as a generic HID device. Use the BlueRetro web configuration interface to manually map any buttons or axes that do not align to the default layout.
+</Info>

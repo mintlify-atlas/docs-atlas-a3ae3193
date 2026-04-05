@@ -1,0 +1,115 @@
+---
+title: "Button macros and combos"
+description: "Assign button combinations to system actions like pairing, reset, and power off, or define up to four custom user macros."
+keywords: ["macros", "combos", "button combination", "system reset", "pairing", "turbo", "power off"]
+---
+
+BlueRetro's combo system maps multi-button holds to built-in system actions and user-defined macros. Combos are configured exactly like regular button mappings — each combo occupies one entry in the `map_cfg` array with a special destination button ID from the `BR_COMBO_*` range.
+
+## Combo destination IDs
+
+All combo destination IDs start at `BR_COMBO_BASE_1 = 118`. The full range is:
+
+| Value | Constant | Description |
+|-------|----------|-------------|
+| `118` | `BR_COMBO_BASE_1` | User macro slot 1 |
+| `119` | `BR_COMBO_BASE_2` | User macro slot 2 |
+| `120` | `BR_COMBO_BASE_3` | User macro slot 3 |
+| `121` | `BR_COMBO_BASE_4` | User macro slot 4 |
+| `122` | `BR_COMBO_SYS_RESET` | Reset the console (pulse the reset line) |
+| `123` | `BR_COMBO_BT_INQUIRY` | Toggle Bluetooth inquiry / pairing mode |
+| `124` | `BR_COMBO_SYS_POWER_OFF` | Send power-off signal to the console |
+| `125` | `BR_COMBO_FACTORY_RESET` | Reset BlueRetro to factory defaults |
+| `126` | `BR_COMBO_DEEP_SLEEP` | Put BlueRetro into deep sleep (low-power standby) |
+| `127` | `BR_COMBO_WIRED_RST` | Reset the wired interface without full reboot |
+
+**Total combo slots:** `BR_COMBO_CNT = BR_COMBO_MAX - BR_COMBO_BASE_1 = 10`
+
+The combo detection bitmask used internally is `BR_COMBO_MASK = 0xFFC00000`.
+
+<Warning>
+  `BR_COMBO_FACTORY_RESET` erases all stored configuration, link keys, and pairing data. This action is irreversible without re-flashing or reconfiguring the adapter from scratch.
+</Warning>
+
+## Default combo assignments
+
+BlueRetro ships with a default combo layout applied to every wired port. These defaults use the following source buttons:
+
+| Combo slot | Default source button | Action |
+|------------|-----------------------|--------|
+| `BR_COMBO_BASE_1` | `PAD_LM` | User macro 1 |
+| `BR_COMBO_BASE_2` | `PAD_RM` | User macro 2 |
+| `BR_COMBO_BASE_3` | `PAD_MM` | User macro 3 |
+| `BR_COMBO_BASE_4` | `PAD_RB_UP` | User macro 4 |
+| `BR_COMBO_SYS_RESET` | `PAD_RB_LEFT` | System reset |
+| `BR_COMBO_BT_INQUIRY` | `PAD_RB_RIGHT` | Bluetooth pairing mode |
+| `BR_COMBO_SYS_POWER_OFF` | `PAD_RB_DOWN` | Power off console |
+| `BR_COMBO_FACTORY_RESET` | `PAD_LD_UP` | Factory reset |
+| `BR_COMBO_DEEP_SLEEP` | `PAD_LD_DOWN` | Deep sleep |
+| `BR_COMBO_WIRED_RST` | `PAD_MS` | Wired interface reset |
+
+<Note>
+  Default combo entries are added to every port's `map_cfg` during config initialization (version upgrade from V2→V3 also backfills them). You can change or remove any combo by editing the mapping table in the web interface.
+</Note>
+
+## System action combos
+
+<CardGroup cols={2}>
+  <Card title="BR_COMBO_SYS_RESET" icon="rotate-ccw">
+    Pulses the console's reset line for the configured duration (`reset_pin_pulse_ms`, default 500 ms). Equivalent to pressing the physical reset button on the console.
+  </Card>
+  <Card title="BR_COMBO_BT_INQUIRY" icon="bluetooth">
+    Toggles between inquiry (pairing) mode and normal operating mode. Use this to pair a new controller without touching the adapter's physical button.
+  </Card>
+  <Card title="BR_COMBO_SYS_POWER_OFF" icon="power">
+    Sends a power-off signal through the power pin (`power_pin_pulse_ms`, default 20 ms). Requires the adapter to be wired to the console's power line.
+  </Card>
+  <Card title="BR_COMBO_FACTORY_RESET" icon="trash-2">
+    Clears `/fs/config.bin` and all stored Bluetooth keys, then reboots BlueRetro with default settings.
+  </Card>
+  <Card title="BR_COMBO_DEEP_SLEEP" icon="moon">
+    Places the ESP32 into deep sleep, halting Bluetooth activity and reducing power draw to near zero. Wake by pressing the physical IO0 button or cycling power.
+  </Card>
+  <Card title="BR_COMBO_WIRED_RST" icon="zap">
+    Reinitializes the wired interface driver without a full ESP32 reboot. Useful after changing `dev_mode` or `multitap_cfg` when you want to apply the change mid-session.
+  </Card>
+</CardGroup>
+
+## User macro slots (BASE_1 through BASE_4)
+
+The four `BR_COMBO_BASE_*` slots are reserved for user-defined sequences. Assign any source button to one of these slots in the mapping table. The combo fires when the source button is held for the configured threshold duration.
+
+<Tip>
+  User macro slots are general-purpose. Their behavior depends on how the host system (or future firmware features) interprets `BR_COMBO_BASE_1` through `BR_COMBO_BASE_4`. Use them for application-specific shortcuts or as triggers for external integrations.
+</Tip>
+
+## Combo release flags
+
+BlueRetro tracks whether a combo has already fired and waits for all buttons to be released before allowing it to trigger again. This prevents accidental repeat activations from a single long hold. The following flags govern this behavior per Bluetooth device:
+
+| Flag | Description |
+|------|-------------|
+| `BT_WAITING_FOR_RELEASE_MACRO1` | Waiting for release after macro 1 fired |
+| `BT_WAITING_FOR_RELEASE_MACRO2` | Waiting for release after macro 2 fired |
+| `BT_WAITING_FOR_RELEASE_MACRO3` | Waiting for release after macro 3 fired |
+| `BT_WAITING_FOR_RELEASE_MACRO4` | Waiting for release after macro 4 fired |
+| `BT_WAITING_FOR_RELEASE_MACRO5` | Waiting for release after macro 5 fired |
+| `BT_WAITING_FOR_RELEASE_MACRO6` | Waiting for release after macro 6 fired |
+
+## Turbo mode
+
+Any button mapping — including combos — can have turbo enabled by setting a non-zero value in the `turbo` field of the `map_cfg` entry. While the source button is held, the output alternates between pressed and released at the turbo rate, producing rapid-fire behavior.
+
+<AccordionGroup>
+  <Accordion title="Configuring turbo via the web interface">
+    1. Open the mapping table for the relevant port in the web interface.
+    2. Locate the mapping entry for the button you want to apply turbo to.
+    3. Set the **Turbo** field to a non-zero rate value.
+    4. Click **Save**.
+
+    Turbo applies per-mapping entry, so you can enable turbo on some buttons while leaving others normal.
+  </Accordion>
+  <Accordion title="Turbo and combo interaction">
+    Turbo can be applied to combo destination buttons as well as regular buttons. A turbo combo fires the system action repeatedly as long as the source button is held. Use this with care for actions like `BR_COMBO_SYS_RESET` — repeated pulses could be disruptive.
+  </Accordion>
+</AccordionGroup>
